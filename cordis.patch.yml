@@ -31,3 +31,9 @@
         promptSection: true
         # Register the bundled `writing-artifacts` skill.
         skill: true
+        # Color overrides handed to previewed artifacts, layered on top of the
+        # app's own live theme (which is the default). Keys are custom
+        # properties; one without a leading `--` is read as an alias token.
+        # palette:
+        #   state-business-primary: '#e0552b'
+        #   --dsw-alias-bg-base: '#faf7f2'
