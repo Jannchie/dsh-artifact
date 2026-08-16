@@ -1,6 +1,6 @@
 {
   "name": "dsh-artifact",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Claude-Code-style artifacts for dsh: an `artifact` tool that writes self-contained HTML, a bundled authoring skill, a sidebar nav button, and an in-app artifact browser with sandboxed HTML preview",
   "keywords": [
     "dsh",
@@ -52,14 +52,14 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-home-paths": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-api-remotes": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/dsh-home-paths": "*",
+    "@deepseek-ai/dsh-typert-protocol": "*",
+    "@deepseek-ai/dsh-client-runtime": "*",
+    "@deepseek-ai/dsh-api-remotes": "*",
     "react": "^18.2.0",
-    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6"
+    "@deepseek-ai/dsh-client-ui-primitives": "*"
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "^3.18.1"
