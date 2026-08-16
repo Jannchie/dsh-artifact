@@ -1,6 +1,6 @@
 {
   "name": "dsh-artifact",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Claude-Code-style artifacts for dsh: an `artifact` tool that writes self-contained HTML, a bundled authoring skill, a sidebar nav button, and an in-app artifact browser with sandboxed HTML preview",
   "keywords": [
     "dsh",
@@ -31,13 +31,15 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
+    "lib/store.js",
     "cordis.patch.yml",
     "README.zh.md",
     "NOTES.md"
   ],
   "license": "MIT",
   "scripts": {
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "test": "node scripts/test.mjs"
   },
   "dsh": {
     "bundle": {
