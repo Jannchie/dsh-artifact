@@ -1,0 +1,33 @@
+# The dsh-artifact bundle patch: one host row that registers everything the
+# artifact surface needs on the host plane —
+#
+#   * the `artifact` Remote service consumed by the browser half,
+#   * the model-facing `artifact` tool,
+#   * a system-prompt section naming the store, so the model knows where its
+#     output lands,
+#   * the bundled `writing-artifacts` skill (a runtime skill, so it needs no
+#     skill root on disk and travels inside the package).
+#
+# The browser half — sidebar action + artifact browser overlay — ships via the
+# package.json `dsh.client` declaration + exports["./client"].
+#
+# Only `tools` is injected. The store is harness user data under `$DSH_HOME`
+# reached with `node:fs`, not workspace content: the filesystem service has no
+# delete and no mkdir, and its sandbox would deny every write to a directory
+# outside the session workspace under the default `workspace-write` policy.
+- insert:
+    - id: artifact
+      name: 'dsh-artifact'
+      inject: [tools]
+      config:
+        # Absolute directory owning artifact HTML files. Omit (or set to null)
+        # to use `$DSH_HOME/artifacts` — by default `~/.dsh/artifacts`.
+        root: null
+        # Maximum characters accepted in one artifact write (tool + UI).
+        maxArtifactChars: 400000
+        # Register the system-prompt section that tells the model artifacts
+        # exist and where they are stored. Set false to keep the tool but drop
+        # the nudge; the tool description still carries the same rules.
+        promptSection: true
+        # Register the bundled `writing-artifacts` skill.
+        skill: true

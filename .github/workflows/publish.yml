@@ -1,0 +1,64 @@
+name: Publish
+
+# Publishes this package to npm using a **trusted publisher** (OIDC).
+#
+# No NPM_TOKEN is involved: npm exchanges the GitHub Actions OIDC token for a
+# short-lived credential, which is why `id-token: write` below is mandatory and
+# why no secret appears anywhere in this file. It also means publishing cannot
+# happen from a laptop or a fork — only from this workflow, in this repository.
+#
+# One-time setup on npmjs.com:
+#   npmjs.com/package/dsh-artifact/access → Trusted publisher → GitHub Actions
+#   Organization or user: Jannchie      Repository: dsh-artifact
+#   Workflow filename:    publish.yml   Environment: (leave empty)
+# The workflow filename must match this file's name exactly.
+#
+# Release flow:
+#   1. bump "version" in package.json
+#   2. git tag v0.2.0 && git push origin v0.2.0
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required — npm trusted publishing exchanges this OIDC token
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # setup-node ships npm 10.x with Node 22; trusted publishing needs 11.5.1+.
+      - name: Use an npm that supports trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      - name: Syntax-check the plugin
+        run: node scripts/check.mjs
+
+      - name: Check the tag against package.json
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          tagged="${GITHUB_REF_NAME#v}"
+          declared="$(node -p "require('./package.json').version")"
+          # A tag that disagrees with package.json would publish a version nobody
+          # tagged; fail here rather than after the registry has the artifact.
+          if [ "$tagged" != "$declared" ]; then
+            echo "tag says $tagged but package.json says $declared"
+            exit 1
+          fi
+
+      - name: Publish
+        run: npm publish --access public
