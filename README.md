@@ -38,7 +38,32 @@ The agent also gets a `writing-artifacts` skill, so the HTML it produces is a re
 | `write` | `path`, `content` | Create or replace an artifact |
 | `delete` | `path` | Remove an artifact |
 
-`path` is relative to the store and the `.html` suffix is optional, so `write path:"q3-report"` produces `q3-report.html`. Writes are confined to the store: a path that escapes it is rejected rather than saved somewhere the browser cannot list.
+`path` is relative to the store and the `.html` suffix is optional, so `write path:"q3-report"` produces `q3-report.html`. The store is a flat shelf: a path that escapes it, nests inside a subdirectory, or starts with a dot is rejected rather than saved somewhere the browser cannot list.
+
+Revision history is deliberately not on this tool. The model just wrote the document and knows what it wrote; asking what changed is something a person does a day later, so the answer lives in the panel they are looking at.
+
+## Revision history
+
+An artifact the agent rewrites keeps what it replaced. Open one that has been
+written more than once and a **History** button appears beside the title; it is
+absent entirely for an artifact written once, which is most of them.
+
+The revisions sit on a timeline above the document. Pick one and it loads beside
+the current version rather than instead of it:
+
+- In **preview**, hold **Hold to see this one** and the older revision takes the
+  same place on screen — same size, same scroll position — so what changed jumps
+  out instead of having to be hunted across two half-width columns.
+- In **source**, the two are lined up as a diff, with long unchanged stretches
+  folded away.
+
+**Restore this one** makes an older revision current again. It needs no
+confirmation: the content it displaces is kept like any other overwrite, so a
+restore is undone by restoring.
+
+Revisions are stored beside the artifacts, under `.versions/`, and the newest 20
+per artifact are kept (`maxVersionsPerArtifact`). A rewrite that changed nothing
+is not a revision. Deleting an artifact deletes its history with it.
 
 ## Where artifacts live
 
@@ -63,6 +88,8 @@ Override in your profile's `cordis.patch.yml`:
     root: /absolute/path/to/artifacts
     # Maximum characters accepted in one write.
     maxArtifactChars: 400000
+    # Superseded revisions kept per artifact. 0 turns history off entirely.
+    maxVersionsPerArtifact: 20
     # Inject the system-prompt section about when to write an artifact.
     promptSection: true
     # Register the bundled writing-artifacts skill.
