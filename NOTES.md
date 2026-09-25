@@ -44,6 +44,20 @@ The iframe runs `allow-scripts` and deliberately **not** `allow-same-origin`, so
 
 That isolation also means the app's own CSS does not reach inside. Two consequences are handled before the document renders: its custom properties are injected, since an artifact referencing `--dsw-*` would otherwise resolve nothing; and `color-scheme: light dark` is added when the document declares none, because scrollbars and form controls are painted by the user agent, which paints them light until asked otherwise.
 
+## Two frames cannot see each other, and neither can the page
+
+Comparing revisions by swapping them in place needs both frames looking at the same part of the document — otherwise holding the button reads as "everything changed" when the older frame is merely still at the top.
+
+There is no way to read an iframe's scroll offset here, and that is not a gap to work around: `allow-scripts` without `allow-same-origin` is the whole reason model-written markup cannot reach this page's origin. Relaxing it for a number would trade the isolation for a convenience.
+
+`postMessage` needs none of that access. The preview shell injects a few lines that report the offset on scroll and accept one back, and the browser hands the position over at the moment of a swap — one message per press, no polling. Two details matter: believe a message only when `event.source` is a frame this view mounted, since an artifact is allowed to run scripts and can post anything it likes; and have the injected listener ignore scroll events for a moment after it scrolls itself, or the echo comes straight back.
+
+## The browser half has no module boundary a test can reach
+
+`lib/client.js` is one `__ModuleLoader__.load({ factory })` registration, and the `require` handed to that factory resolves registered ids — `react`, the primitives package — and nothing else. There is no import a test could take.
+
+That is a packaging fact, not a reason to ship algorithmic code untested. The diff has real edge cases (empty revisions, a pair too far apart to align, a fold that must not eat the lines around it), so the pure helpers hang off `exports.__internals`, and `scripts/test.mjs` stubs `window.__ModuleLoader__`, imports the file, and calls the captured factory with a `require` that answers `{}`. Nothing in the factory touches react or the icon set until a view mounts, so the helpers come back usable.
+
 ## Bundled skills
 
 `ctx.skills.register()` takes a runtime skill, which is how the `writing-artifacts` skill ships inside this package. The filesystem provider is the wrong route for a plugin: a bundle plugin is an npm package, so a skill directory resolves inside `node_modules`, where no catalog scanning project and user roots will ever find it.

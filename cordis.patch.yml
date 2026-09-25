@@ -25,6 +25,11 @@
         root: null
         # Maximum characters accepted in one artifact write (tool + UI).
         maxArtifactChars: 400000
+        # Superseded revisions kept per artifact, oldest dropped first. They
+        # live in `.versions/` inside the store. 0 turns history off: writes
+        # stop keeping what they replace and the browser shows no history
+        # controls at all.
+        maxVersionsPerArtifact: 20
         # Register the system-prompt section that tells the model artifacts
         # exist and where they are stored. Set false to keep the tool but drop
         # the nudge; the tool description still carries the same rules.
