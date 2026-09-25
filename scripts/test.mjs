@@ -1,7 +1,7 @@
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ArtifactStore, VERSIONS_DIR, extractTitle } from "../lib/store.js";
+import { ArtifactStore, SESSIONS_DIR, VERSIONS_DIR, extractTitle } from "../lib/store.js";
 
 /**
  * Exercise the store against a REAL temporary directory.
@@ -233,6 +233,24 @@ check("context survives around the fold", folded.filter((r) => r.kind === "same"
 check("the change itself is never folded", folded[folded.length - 1].kind === "add", folded[folded.length - 1]);
 folded = foldUnchanged(same(4));
 check("a short run stays whole", folded.length === 4 && folded.every((r) => r.kind === "same"), folded);
+
+console.log("sessions");
+// A separate store, so the artifacts written above do not blur what is scoped.
+const scoped = new ArtifactStore(join(base, "scoped"));
+await scoped.write("mine", doc, "s1");
+await scoped.write("theirs", doc, "s2");
+await scoped.write("unowned", doc);
+await scoped.write("shared", doc, "s2");
+await scoped.write("shared", doc + " ", "s1");
+const names = async (id) => (await scoped.list(id)).value.artifacts.map((a) => a.name).sort();
+check("unscoped lists every artifact", (await names()).length === 4, await names());
+check("a session lists what it wrote", JSON.stringify(await names("s1")) === JSON.stringify(["mine.html", "shared.html"]), await names("s1"));
+check("an artifact rewritten by another session belongs to both", (await names("s2")).includes("shared.html"), await names("s2"));
+check("an artifact with no record belongs to no session", !(await names("s1")).includes("unowned.html"));
+check("the record directory is not listed", !(await names()).some((n) => n.startsWith(".")), await names());
+await scoped.delete("mine");
+check("delete drops the session record", !(await readdir(join(base, "scoped", SESSIONS_DIR))).includes("mine.json"));
+check("a session id cannot name an artifact", (await scoped.write(SESSIONS_DIR, doc)).error?.code === "outside-store");
 
 await rm(base, { recursive: true, force: true });
 console.log(failures === 0 ? "\nALL OK" : "\n" + failures + " FAILURE(S)");
