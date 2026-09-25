@@ -25,7 +25,9 @@ Ask the agent for something worth keeping:
 
 > Summarize this week's benchmark results as a report.
 
-It calls the `artifact` tool, and the document appears under the **Artifacts** tab. Click through to read it, `‹` to go back.
+It calls the `artifact` tool, and the document appears under the conversation's **Artifacts** tab, which lists what that session wrote. Every artifact, from any session, is in the **Artifacts** library opened from the sidebar icon beside Plugins (DSH 0.1.7+). Click through to read one, `‹` to go back.
+
+Artifacts written before this version, or on a host older than DSH 0.1.7, carry no session and appear in the library only.
 
 The agent also gets a `writing-artifacts` skill, so the HTML it produces is a real document — one reading column, semantic headings, tables that scroll on their own, a palette that follows your theme — rather than an app shell wrapped around three paragraphs.
 
