@@ -58,6 +58,16 @@ There is no way to read an iframe's scroll offset here, and that is not a gap to
 
 That is a packaging fact, not a reason to ship algorithmic code untested. The diff has real edge cases (empty revisions, a pair too far apart to align, a fold that must not eat the lines around it), so the pure helpers hang off `exports.__internals`, and `scripts/test.mjs` stubs `window.__ModuleLoader__`, imports the file, and calls the captured factory with a `require` that answers `{}`. Nothing in the factory touches react or the icon set until a view mounts, so the helpers come back usable.
 
+## The host half has no module boundary a test can reach either
+
+`lib/index.js` imports `@deepseek-ai/dsh-*`, which are peers: outside a running dsh they do not resolve, so a plain `import` of the host half fails before any code runs. The browser half's `__ModuleLoader__` trick does not transfer — ESM resolves static imports before the module body, so a stub registered by importing the file arrives too late.
+
+That left the plugin's entire model-facing surface — the tool description, the prompt section, the bundled skill, and the one-line reply to every command — untestable, which is how `renderOutcome` went on printing the absolute store path long after that path was the thing the surrounding prose warned against. A model quoted it, built a markdown link out of it, and the link went nowhere: an artifact store is harness user data the app never serves.
+
+The fix is the same split that made the store testable: `lib/text.js` holds every string and imports only `node:path` and `./store.js`, so `scripts/test.mjs` imports it directly and asserts on what the strings SAY. The tests are therefore about wording — no reply may contain a path, and every path in the prose must sit inside a code span, because text in backticks reads to a model as a value to pass while the same text loose in a sentence reads as an address. `renderOutcome` reports an artifact by the filename its `path` argument takes.
+
+Two consequences worth keeping: a new string belongs in `lib/text.js`, not `index.js`, or it is untested by construction; and `lib/text.js` has to stay in package.json `files[]`, or the published plugin imports a module that is not in the tarball.
+
 ## Bundled skills
 
 `ctx.skills.register()` takes a runtime skill, which is how the `writing-artifacts` skill ships inside this package. The filesystem provider is the wrong route for a plugin: a bundle plugin is an npm package, so a skill directory resolves inside `node_modules`, where no catalog scanning project and user roots will ever find it.

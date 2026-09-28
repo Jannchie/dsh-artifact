@@ -252,6 +252,107 @@ await scoped.delete("mine");
 check("delete drops the session record", !(await readdir(join(base, "scoped", SESSIONS_DIR))).includes("mine.json"));
 check("a session id cannot name an artifact", (await scoped.write(SESSIONS_DIR, doc)).error?.code === "outside-store");
 
+console.log("model-facing text");
+// The host half imports harness packages that do not resolve outside a running
+// dsh, so the model-facing strings live in their own module and are exercised
+// here as plain text. That split exists because of the bug this section covers:
+// tool output printed the absolute store path, the model linked an artifact like
+// a file in a directory the app never serves, and the link failed silently.
+const { renderOutcome, promptSection, skillContent, toolDescription } = await import("../lib/text.js");
+const storeRoot = join(base, "artifacts");
+const written = join(storeRoot, "q3.html");
+
+check(
+	"a write is reported by store-relative name, not by path",
+	renderOutcome({ ok: true, value: { path: written, title: "Q3 Report" } }) ===
+		"Wrote q3.html — it is in the artifact panel where the user reads it.",
+	renderOutcome({ ok: true, value: { path: written, title: "Q3 Report" } }),
+);
+check(
+	"a delete is reported by name too",
+	renderOutcome({ ok: true, value: { path: written, removed: true } }) === "Deleted q3.html.",
+	renderOutcome({ ok: true, value: { path: written, removed: true } }),
+);
+check(
+	"an empty list says where the store is",
+	renderOutcome({ ok: true, value: { artifacts: [], root: storeRoot } }) ===
+		"No artifacts yet in " + storeRoot + ".",
+	renderOutcome({ ok: true, value: { artifacts: [], root: storeRoot } }),
+);
+check(
+	"a list is a readable name/title table",
+	renderOutcome({
+		ok: true,
+		value: {
+			artifacts: [
+				{ name: "q3.html", title: "Q3 Report" },
+				{ name: "later.html", title: "Later" },
+			],
+			root: storeRoot,
+		},
+	}) === "Artifacts (2):\n- q3.html\tQ3 Report\n- later.html\tLater",
+	renderOutcome({
+		ok: true,
+		value: {
+			artifacts: [
+				{ name: "q3.html", title: "Q3 Report" },
+				{ name: "later.html", title: "Later" },
+			],
+			root: storeRoot,
+		},
+	}),
+);
+check("a read still returns the raw document", renderOutcome({ ok: true, value: { content: doc } }) === doc);
+check(
+	"a failure names its code",
+	renderOutcome({ ok: false, error: { code: "not-found", message: "no artifact at x" } }) ===
+		"artifact: not-found: no artifact at x",
+	renderOutcome({ ok: false, error: { code: "not-found", message: "no artifact at x" } }),
+);
+
+/**
+ * The two things that made the store path usable as a link.
+ *
+ * `openable` is any absolute path or `file:` URL: what a model turns into an
+ * href. `bareOpenable` is the harder rule — prose with code spans stripped —
+ * because text inside backticks reads as a *value to pass*, while the same text
+ * loose in a sentence reads as an address, which is what got linked. Every path
+ * this plugin shows a model therefore lives in a code span, and the rule holds
+ * for all four texts at once rather than with an exception carved out per file.
+ */
+const OPENABLE = /[A-Za-z]:[\\/]|\\\\|file:\/\//;
+const bareOpenable = (text) => OPENABLE.test(text.replace(/`[^`]*`/g, ""));
+
+// What the tool SAYS back is what a model quotes into a final answer, so no
+// reply may carry a path at all.
+for (const [label, outcome] of [
+	["write", { ok: true, value: { path: written, title: "Q3 Report" } }],
+	["delete", { ok: true, value: { path: written, removed: true } }],
+]) {
+	check("the " + label + " reply carries no path", !OPENABLE.test(renderOutcome(outcome)), renderOutcome(outcome));
+}
+
+// The prose builders name the store, because a model has to know where its
+// output lands. What they must never do is leave a path loose in a sentence.
+check("every path in the tool description is a code span", !bareOpenable(toolDescription(storeRoot)), toolDescription(storeRoot).slice(0, 300));
+check("every path in the prompt section is a code span", !bareOpenable(promptSection(storeRoot)), promptSection(storeRoot).slice(0, 300));
+check("every path in the skill body is a code span", !bareOpenable(skillContent(storeRoot)), skillContent(storeRoot).slice(0, 300));
+check(
+	"the tool description still names the store",
+	/`path` is relative to it/.test(toolDescription(storeRoot)),
+	toolDescription(storeRoot).slice(0, 200),
+);
+check(
+	"the prompt tells the model not to link an artifact",
+	/\bnever\b[^.]*\bpath\b/i.test(promptSection(storeRoot)) && /\blink\b/i.test(promptSection(storeRoot)),
+	promptSection(storeRoot),
+);
+check(
+	"the skill tells the model not to link an artifact",
+	/never link it/i.test(skillContent(storeRoot)) && /artifact panel/i.test(skillContent(storeRoot)),
+	skillContent(storeRoot).slice(0, 400),
+);
+
 await rm(base, { recursive: true, force: true });
 console.log(failures === 0 ? "\nALL OK" : "\n" + failures + " FAILURE(S)");
 process.exitCode = failures === 0 ? 0 : 1;
