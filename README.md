@@ -9,6 +9,8 @@ Artifacts for [DeepSeek Harness](https://github.com/deepseek-ai): the agent writ
 
 ![The artifact browser rendering a generated cheat sheet](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/en.png)
 
+![The artifact library: every artifact, newest first](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-en.png)
+
 Without it, a report the agent produces either scrolls out of the chat or lands in your repository as a stray `.html` file nobody opens again. An artifact is stored outside the workspace, listed newest-first, and rendered in place — so it survives the conversation that produced it and follows you across projects.
 
 ## Install

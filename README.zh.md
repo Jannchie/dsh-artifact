@@ -9,6 +9,8 @@
 
 ![工件浏览器正在渲染一份生成的速查表](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/cn.png)
 
+![工件库：所有工件按时间倒序排列](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-cn.png)
+
 没有它的话，智能体写的报告要么滚出聊天记录，要么变成仓库里一个没人再打开的 `.html`。工件存在 workspace 之外、按时间倒序列出、就地渲染——它比产生它的那次对话活得久，也跟着人走而不是跟着项目走。
 
 ## 安装
