@@ -1,7 +1,7 @@
 {
   "name": "dsh-artifact",
-  "version": "0.6.1",
-  "description": "Claude-Code-style artifacts for dsh: an `artifact` tool that writes self-contained HTML, a bundled authoring skill, a sidebar nav button, and an in-app artifact browser with sandboxed HTML preview",
+  "version": "0.7.0",
+  "description": "Claude-Code-style artifacts for dsh: an `artifact` tool that writes self-contained HTML, a jump link on every call in the conversation, a right-sidebar tab that reads an artifact beside the chat, a bundled authoring skill, and an in-app artifact browser with sandboxed HTML preview",
   "keywords": [
     "dsh",
     "dsh-plugin",
