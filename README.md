@@ -5,7 +5,7 @@ English | [中文](README.zh.md)
 [![npm](https://img.shields.io/npm/v/dsh-artifact)](https://www.npmjs.com/package/dsh-artifact)
 [![license](https://img.shields.io/npm/l/dsh-artifact)](./LICENSE)
 
-Artifacts for [DeepSeek Harness](https://github.com/deepseek-ai): the agent writes self-contained HTML documents, and you read them in a tab beside the conversation.
+Artifacts for [DeepSeek Harness](https://github.com/deepseek-ai): the agent writes self-contained HTML documents, every call draws a jump link that opens one beside the conversation, and the whole library sits in the sidebar.
 
 ![The artifact browser rendering a generated cheat sheet](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/en.png)
 
@@ -27,11 +27,23 @@ Ask the agent for something worth keeping:
 
 > Summarize this week's benchmark results as a report.
 
-It calls the `artifact` tool, and the document appears under the conversation's **Artifacts** tab, which lists what that session wrote. Every artifact, from any session, is in the **Artifacts** library opened from the sidebar icon beside Plugins (DSH 0.1.7+). Click through to read one, `‹` to go back.
+It calls the `artifact` tool. The call comes back with the document's name as a jump link, and pressing it opens what the agent wrote beside the chat, in the right sidebar. The conversation's **Artifacts** tab lists what that session wrote; the **Artifacts** panel on the left sidebar holds every artifact from every session (DSH 0.1.7+). Click through to read one, `‹` to go back.
 
 Artifacts written before this version, or on a host older than DSH 0.1.7, carry no session and appear in the library only.
 
 The agent also gets a `writing-artifacts` skill, so the HTML it produces is a real document — one reading column, semantic headings, tables that scroll on their own, a palette that follows your theme — rather than an app shell wrapped around three paragraphs.
+
+## Opening an artifact
+
+Three ways in, and all three are the app's own:
+
+- **The jump link on the call.** Every `artifact` call in the conversation draws the artifact's name as an underlined link. Press it and the document opens in the right sidebar, next to the message you are still reading. Pressing a second link moves that same sidebar tab rather than stacking another.
+- **The sidebar tab.** The right sidebar's add control offers **Artifacts** as a page, so the tab can be open before there is anything to link to. Read and compare artifacts there while the agent goes on talking.
+- **The panel.** The **Artifacts** icon in the left sidebar opens every artifact, from every session, newest first.
+
+A jump link falls back to the panel whenever the right sidebar cannot take it — on a host older than DSH 0.1.7, or with no session selected — so it always opens something. An artifact panel page also carries an **Open in sidebar** button, for when you found the document in the library and would rather read it beside the conversation.
+
+The model is told the link exists, and told not to write one of its own: the store path is internal and a markdown link built from it fails silently.
 
 ## The `artifact` tool
 

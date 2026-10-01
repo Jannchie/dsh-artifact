@@ -180,8 +180,15 @@ console.log("diff");
 let registered = null;
 globalThis.window = { __ModuleLoader__: { load: (spec) => (registered = spec) } };
 await import("../lib/client.js");
-const { diffRevisions, foldUnchanged, formatBytes, splitForDiff } = registered.factory(() => ({}))
-	.__internals;
+// React is not a dependency of this package — it is a PEER the app provides — so
+// the factory's `require` answers with the one function the row components call.
+// That is enough to render them for real: a component built from
+// `createElement` returns a plain element tree, which a test can walk and press.
+const reactStub = {
+	createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat() }),
+};
+const client = registered.factory((id) => (id === "react" ? reactStub : {}));
+const { diffRevisions, foldUnchanged, formatBytes, splitForDiff } = client.__internals;
 
 check("bytes under a kilobyte are exact", formatBytes(512) === "512 B", formatBytes(512));
 check("kilobytes are rounded", formatBytes(2048) === "2 KB", formatBytes(2048));
@@ -234,6 +241,80 @@ check("the change itself is never folded", folded[folded.length - 1].kind === "a
 folded = foldUnchanged(same(4));
 check("a short run stays whole", folded.length === 4 && folded.every((r) => r.kind === "same"), folded);
 
+console.log("the conversation's artifact row");
+// The row's one decision is whether the conversation links an artifact or not,
+// and both directions of getting it wrong are silent: a link built for a `list`
+// opens nothing, and a missing link is the whole feature absent. So the model is
+// exercised here as plain data, exactly as a Tool block delivers it.
+const { artifactFileName, artifactRowModel } = client.__internals;
+check("a path without a suffix takes the store's", artifactFileName("q3-report") === "q3-report.html", artifactFileName("q3-report"));
+check("an explicit suffix is not doubled", artifactFileName("q3-report.html") === "q3-report.html", artifactFileName("q3-report.html"));
+check("the last segment is the name", artifactFileName("nested/q3") === "q3.html", artifactFileName("nested/q3"));
+check("no path means no name", artifactFileName(undefined) === "" && artifactFileName("") === "", artifactFileName(undefined));
+
+const settled = (args, extra) => ({
+	kind: "tool-result",
+	callId: "call-1",
+	call: { name: "artifact", argsRaw: JSON.stringify(args) },
+	content: [{ type: "text", text: "Wrote q3-report.html" }],
+	isError: false,
+	...extra,
+});
+
+let row = artifactRowModel(settled({ command: "write", path: "q3-report", content: "<html></html>" }));
+check("a write names the artifact the store will hold", row.name === "q3-report.html", row);
+check("a write reports its own command", row.command === "write", row);
+check("a settled write is openable", row.openable === true, row);
+
+check("a list has nothing to open", artifactRowModel(settled({ command: "list" })).openable === false);
+check(
+	"a list is still labelled as one",
+	artifactRowModel(settled({ command: "list" })).command === "list",
+);
+check(
+	"a list names no artifact, which is not the same as unreadable arguments",
+	artifactRowModel(settled({ command: "list" })).name === "",
+);
+check(
+	"a delete leaves nothing to open: it removed the file",
+	artifactRowModel(settled({ command: "delete", path: "q3-report" })).openable === false,
+);
+check(
+	"a read of an artifact is openable",
+	artifactRowModel(settled({ command: "read", path: "q3-report" })).openable === true,
+);
+
+row = artifactRowModel(
+	settled(
+		{ command: "write", path: "q3-report", content: "<html></html>" },
+		{ isError: true, error: { name: "ToolError", code: "too-large" }, content: [{ type: "text", text: "artifact: too-large: nope" }] },
+	),
+);
+check("a failed write is not openable", row.openable === false, row);
+check("a failure is summarized by its first line", row.errorSummary === "artifact: too-large: nope", row);
+
+check("a preparing call is not openable", artifactRowModel({ phase: "preparing", callId: "call-2" }).openable === false);
+check(
+	"a preparing call says so",
+	artifactRowModel({ phase: "preparing", callId: "call-2" }).state === "preparing",
+);
+check(
+	"a started call reads its arguments for the link",
+	artifactRowModel({ phase: "start", callId: "call-3", argsRaw: JSON.stringify({ command: "read", path: "x" }) }).name === "x.html",
+);
+check(
+	"a running write offers no link yet: the file is not there",
+	artifactRowModel({ phase: "start", callId: "call-3", argsRaw: JSON.stringify({ command: "write", path: "x" }) }).openable === false,
+);
+check(
+	"unparsable arguments are a row, not a crash",
+	artifactRowModel({ phase: "start", callId: "call-4", argsRaw: "{" }).name === "",
+);
+check(
+	"a stopped call is not openable",
+	artifactRowModel(settled({ command: "write", path: "x" }, { isError: true, error: { name: "E", code: "interrupted" } })).openable === false,
+);
+
 console.log("sessions");
 // A separate store, so the artifacts written above do not blur what is scoped.
 const scoped = new ArtifactStore(join(base, "scoped"));
@@ -265,7 +346,12 @@ const written = join(storeRoot, "q3.html");
 check(
 	"a write is reported by store-relative name, not by path",
 	renderOutcome({ ok: true, value: { path: written, title: "Q3 Report" } }) ===
-		"Wrote q3.html — it is in the artifact panel where the user reads it.",
+		"Wrote q3.html — the user opens it from the jump link on this call, or from the artifact panel.",
+	renderOutcome({ ok: true, value: { path: written, title: "Q3 Report" } }),
+);
+check(
+	"the write reply names the jump link the conversation carries",
+	/jump link/i.test(renderOutcome({ ok: true, value: { path: written, title: "Q3 Report" } })),
 	renderOutcome({ ok: true, value: { path: written, title: "Q3 Report" } }),
 );
 check(
@@ -351,6 +437,195 @@ check(
 	"the skill tells the model not to link an artifact",
 	/never link it/i.test(skillContent(storeRoot)) && /artifact panel/i.test(skillContent(storeRoot)),
 	skillContent(storeRoot).slice(0, 400),
+);
+
+console.log("client registrations");
+// The browser half now registers into three surfaces that only exist on some
+// host versions, and the failure this section exists to catch is the loud one:
+// a service named in the plugin's own `inject` list that an older host does not
+// provide leaves the whole fiber PENDING, taking the `artifact` tool, the panel
+// and the session tab down with it. So the Cordis surface is stubbed, every
+// registration is read back, and the fallback path is exercised by making the
+// right Sidebar refuse exactly the way it refuses with no Session on screen.
+function fakeClientContext({ withSidebar = true, withLayout = true, openTabRefuses = false } = {}) {
+	const registrations = [];
+	const tabTypes = [];
+	const opened = [];
+	const panels = [];
+	const injected = [];
+	const sidebarRight = {
+		openTab(kind, options) {
+			if (openTabRefuses) throw new Error("sidebarRight: nothing is mounted");
+			opened.push({ kind, options });
+		},
+	};
+	const sidebarRightTabs = {
+		register(definition) {
+			tabTypes.push(definition);
+			return () => {};
+		},
+	};
+	const ctx = {
+		effect(execute) {
+			return execute();
+		},
+		inject(names, callback) {
+			injected.push(names);
+			if (withSidebar) callback({ sidebarRight, sidebarRightTabs });
+			return { dispose() {} };
+		},
+		get(name) {
+			if (name === "remote.artifact") return {};
+			if (name === "layout" && withLayout) return { selectPanel: (id) => panels.push(id) };
+			return undefined;
+		},
+		locale: { register: () => () => {}, bind: () => (key) => key },
+		remote: { $mount: async () => async () => {} },
+		slots: {
+			inject(key, callback) {
+				callback();
+				return () => {};
+			},
+			register(options, Component) {
+				registrations.push({ options, Component });
+				return () => {};
+			},
+		},
+	};
+	return { ctx, registrations, tabTypes, opened, panels, injected };
+}
+
+/** One registration by slot name and an option predicate. */
+const findRegistered = (registrations, name, predicate) =>
+	registrations.find(
+		(entry) => entry.options.name === name && (predicate === undefined || predicate(entry.options)),
+	);
+
+check(
+	"the right Sidebar is not a hard dependency",
+	JSON.stringify(client.inject) === JSON.stringify(["slots", "remote", "locale"]),
+	client.inject,
+);
+
+const wired = fakeClientContext({});
+await client.apply(wired.ctx);
+const toolview = findRegistered(wired.registrations, "tool.call.toolview", (o) => o.key === "artifact");
+const tabBody = findRegistered(wired.registrations, "sidebar.right.pane.tab", (o) => o.key === "dsh-artifact");
+
+check("the artifact call gets its own conversation row", toolview !== undefined && typeof toolview.Component === "function", toolview);
+check("the row is localized by this plugin's namespace", toolview?.options.locale === "artifact", toolview?.options.locale);
+check("the right Sidebar body is registered under the type's own id", tabBody !== undefined, tabBody);
+check("the panel and its sidebar icon still exist", findRegistered(wired.registrations, "main", (o) => o.key === "artifacts") !== undefined && findRegistered(wired.registrations, "sidebar.panellist", (o) => o.id === "artifacts") !== undefined);
+check("the per-conversation view tab still exists", findRegistered(wired.registrations, "conversation.view", (o) => o.id === "artifacts") !== undefined);
+
+check(
+	"the right Sidebar services are waited for, not required",
+	wired.injected.some((names) => names.includes("sidebarRightTabs") && names.includes("sidebarRight")),
+	wired.injected,
+);
+check("one tab type is registered", wired.tabTypes.length === 1, wired.tabTypes.length);
+check("it is this package's own tab", wired.tabTypes[0]?.id === "dsh-artifact" && wired.tabTypes[0]?.kind === "artifact", wired.tabTypes[0]);
+check("it is an extension, the band that may take a builtin over", wired.tabTypes[0]?.priority === "extension", wired.tabTypes[0]?.priority);
+check(
+	"the guide offers it as a page with a title",
+	wired.tabTypes[0]?.guide?.length === 1 && typeof wired.tabTypes[0].guide[0].title() === "string" && wired.tabTypes[0].guide[0].order === 20,
+	wired.tabTypes[0]?.guide,
+);
+check(
+	"the tab's chip text re-resolves through a thunk",
+	typeof wired.tabTypes[0]?.title === "function" && wired.tabTypes[0].title() === "tab.label",
+	wired.tabTypes[0]?.title,
+);
+
+const reveal = toolview.options.inject().revealArtifact;
+reveal("q3-report.html");
+check(
+	"a jump link opens the artifact tab with the path it names",
+	wired.opened.length === 1 && wired.opened[0].kind === "artifact" && wired.opened[0].options.params.path === "q3-report.html",
+	wired.opened,
+);
+check("and opens no panel behind it", wired.panels.length === 0, wired.panels);
+reveal("");
+reveal(undefined);
+check("an empty path opens nothing at all", wired.opened.length === 1, wired.opened.length);
+
+const legacy = fakeClientContext({ withSidebar: false });
+await client.apply(legacy.ctx);
+findRegistered(legacy.registrations, "tool.call.toolview", (o) => o.key === "artifact")
+	.options.inject()
+	.revealArtifact("q3-report.html");
+check("without a right Sidebar the panel takes the jump", legacy.panels.join(",") === "artifacts", legacy.panels);
+check("and no tab type is registered there", legacy.tabTypes.length === 0, legacy.tabTypes.length);
+
+const refusing = fakeClientContext({ openTabRefuses: true });
+await client.apply(refusing.ctx);
+findRegistered(refusing.registrations, "tool.call.toolview", (o) => o.key === "artifact")
+	.options.inject()
+	.revealArtifact("q3-report.html");
+check("a right Sidebar that refuses falls back to the panel", refusing.panels.join(",") === "artifacts", refusing.panels);
+
+const bare = fakeClientContext({ withSidebar: false, withLayout: false });
+await client.apply(bare.ctx);
+findRegistered(bare.registrations, "tool.call.toolview", (o) => o.key === "artifact")
+	.options.inject()
+	.revealArtifact("q3-report.html");
+check("a host with neither surface simply does nothing", bare.panels.length === 0 && bare.opened.length === 0);
+
+console.log("the row as it renders");
+// The pure model above says whether a call HAS an artifact; this section says
+// what the reader gets, and that pressing it opens the artifact it names. Both
+// halves matter, and the second one is the feature.
+const findElement = (element, predicate) => {
+	if (element === null || element === undefined || typeof element !== "object") return null;
+	if (Array.isArray(element)) {
+		for (const child of element) {
+			const found = findElement(child, predicate);
+			if (found !== null) return found;
+		}
+		return null;
+	}
+	if (predicate(element)) return element;
+	return findElement(element.children ?? [], predicate);
+};
+const isLink = (node) => node.props?.className === "dsh-artifact__link";
+const renderRow = (block, revealArtifact) =>
+	findRegistered(wired.registrations, "tool.call.toolview", (o) => o.key === "artifact").Component({
+		t: (key) => key,
+		block,
+		revealArtifact,
+	});
+const renderLink = (block, revealArtifact) => findElement(renderRow(block, revealArtifact), isLink);
+
+const openedPaths = [];
+const link = renderLink(settled({ command: "write", path: "q3-report" }), (path) => openedPaths.push(path));
+check("the row draws the artifact's name as a link", link !== null && link.children.join("") === "q3-report.html", link?.children);
+check("it is a real button, not a div or a bare span", link?.type === "button", link?.type);
+check("the link names the artifact in its accessible label", link?.props["aria-label"] === "row.openTitle", link?.props["aria-label"]);
+
+let stopped = 0;
+link.props.onClick({ stopPropagation: () => (stopped += 1) });
+check("pressing it opens the artifact it names", openedPaths.join(",") === "q3-report.html", openedPaths);
+check("and does not also toggle the tool call row", stopped === 1, stopped);
+
+check("a list row draws no link at all", renderLink(settled({ command: "list" }), () => {}) === null);
+check(
+	"a failed write draws no dead link",
+	renderLink(
+		settled({ command: "write", path: "x" }, { isError: true, error: { name: "E", code: "nope" }, content: [] }),
+		() => {},
+	) === null,
+);
+check(
+	"a row with no opener draws no dead link either",
+	renderLink(settled({ command: "write", path: "x" }), undefined) === null,
+);
+check(
+	"a preparing call says what it is doing",
+	findElement(renderRow({ phase: "preparing", callId: "call-9" }, () => {}), (n) => n.props?.className === "dsh-artifact__toolnote")?.children.join("") === "row.preparing",
+);
+check(
+	"every row keeps the tool's own name for the transcript",
+	renderRow(settled({ command: "write", path: "x" }), () => {}).props["data-tool"] === "artifact",
 );
 
 await rm(base, { recursive: true, force: true });

@@ -71,3 +71,23 @@ Two consequences worth keeping: a new string belongs in `lib/text.js`, not `inde
 ## Bundled skills
 
 `ctx.skills.register()` takes a runtime skill, which is how the `writing-artifacts` skill ships inside this package. The filesystem provider is the wrong route for a plugin: a bundle plugin is an npm package, so a skill directory resolves inside `node_modules`, where no catalog scanning project and user roots will ever find it.
+
+## A keyed `tool.call.toolview` hit REPLACES the shipped row
+
+`tool.call.toolview` dispatches on the wire Tool name, and the "generic" view is **not** a registration you can delegate to — `ToolCallTree` passes it inline as `renderSlot`'s `fallback`, and the view props a registration receives carry no fallback. The tool layer exports only `apply` and `inject`, so `GenericToolCard` is unreachable.
+
+Registering `key: "artifact"` therefore means redrawing the row, and that was the right trade here rather than a cost: the generic row is chosen by a `TOOL_VARIANTS` table keyed on tool names the product knows, an unknown name classifies as `others`, and its card models (`diff`, `read`, `terminal`, `search`, `web`, `image`) each gate on a specific call name. So an `artifact` call rendered the tool name plus the raw arguments — for a `write`, that is the entire HTML document — and offered no way to open what the call wrote. (The host's `presentCall` diff card does not reach the chat either; the client's diff model reads the call's own raw arguments, and only for the names it knows.)
+
+Two consequences worth keeping. The row's one real decision is whether this call has an artifact behind it to link, so it lives in `artifactRowModel` — pure, exported through `__internals`, and asserted in both directions, because a link built for a `list` or for a failed call opens nothing and looks identical to a working one. And the row's CSS is copied from ui-tool's own recipes (the 2px separator dot, the 13px secondary line, the underlined dotted link its file-mutation row already draws for a file name) rather than invented: a row that displaced a shipped one has to sit on the shipped grid.
+
+## The right Sidebar is two registrations, and neither may be required
+
+`ctx.sidebarRightTabs.register({ id, kind, title, guide })` declares the type; `ctx.slots.register({ name: "sidebar.right.pane.tab", key: definition.id })` supplies its body. The key is the definition's `id`, not its `kind` — the seat dispatches on the id, and a kind is explicitly not unique because an extension may take a builtin's over.
+
+The body's parameters do **not** arrive as props of their own. `useTabInfo()` is a prop synthesized from the slot's own `hooks` compartment by the package that declares the slot, and the caller's `params` reach it as `tab.navigation.params`, with a `revision` stepped on every navigation. That last part is what makes a jump link repeatable: a page type deduplicates within a pane, so following three links in a row navigates one tab rather than opening three, and the revision — not the path — is what says a new request is a new request.
+
+The trap is the dependency. Naming `sidebarRightTabs` in this plugin's exported `inject` looks like the obvious thing to do and is wrong: a required service that never arrives leaves the whole fiber PENDING, so an older host loses the `artifact` tool, the panel and the session tab along with the tab type. `ctx.inject([...], (scoped) => …)` waits instead, and the block simply never runs. The same reasoning made the jump link fall back to the panel on a `throw` rather than surfacing it: the right Sidebar refuses to open content with no Session seat mounted, and that is a correct refusal, not an error.
+
+## A one-shot request needs a lifetime, not just a value
+
+The jump link's fallback holds a path for the panel to consume, and a bare `{ path }` outlives its reader: leave the panel, come back, and a fresh mount consumes the same request again and reopens an artifact the reader had navigated away from. The request carries a sequence and is cleared by the mount that acts on it, which is what lets "open this again" and "the reader went back to the list" be different things.
