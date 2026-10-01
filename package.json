@@ -62,7 +62,6 @@
     "@deepseek-ai/dsh-tools": "*",
     "@deepseek-ai/dsh-home-paths": "*",
     "@deepseek-ai/dsh-typert-protocol": "*",
-    "@deepseek-ai/dsh-client-runtime": "*",
     "@deepseek-ai/dsh-api-remotes": "*",
     "react": "^18.2.0",
     "@deepseek-ai/dsh-client-ui-primitives": "*"
