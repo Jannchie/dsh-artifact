@@ -1,6 +1,6 @@
 {
 	"name": "dsh-artifact",
-	"version": "0.8.0",
+	"version": "0.8.1",
 	"description": "Claude-Code-style artifacts for dsh: an `artifact` tool that writes self-contained HTML pages and slide decks, a jump link on every call in the conversation, a right-sidebar tab that reads an artifact beside the chat, a slide editor that edits, presents and exports a deck in place, a bundled authoring skill, and an in-app artifact browser with sandboxed HTML preview",
 	"keywords": [
 		"dsh",
@@ -38,7 +38,7 @@
 		"lib/store.js",
 		"lib/text.js",
 		"cordis.patch.yml",
-		"README.zh.md",
+		"README.en.md",
 		"NOTES.md",
 		"lib/deck.js"
 	],
