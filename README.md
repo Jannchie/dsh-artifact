@@ -1,126 +1,82 @@
 # dsh-artifact
 
-English | [中文](README.zh.md)
+中文 | [English](README.en.md)
 
 [![npm](https://img.shields.io/npm/v/dsh-artifact)](https://www.npmjs.com/package/dsh-artifact)
 [![license](https://img.shields.io/npm/l/dsh-artifact)](./LICENSE)
 
-Artifacts for [DeepSeek Harness](https://github.com/deepseek-ai): the agent writes self-contained HTML documents, every call draws a jump link that opens one beside the conversation, and the whole library sits in the sidebar.
+dsh-artifact 为 [DeepSeek Harness](https://github.com/deepseek-ai) 提供工件（artifact）：智能体通过 `artifact` 工具写出自包含的 HTML 文档或幻灯片，写完即在对话右侧打开。
 
-![The artifact browser rendering a generated cheat sheet](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/en.png)
+智能体生成的报告若只留在聊天记录中，会随对话滚走；若写入仓库，则成为无人再打开的 `.html` 文件。工件保存在工作区之外，按时间倒序集中列出，可就地阅读、编辑、对比历史版本，幻灯片还可放映并导出为 PowerPoint。
 
-![The artifact library: every artifact, newest first](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-en.png)
+![智能体写完幻灯片后，右侧栏自动打开幻灯片编辑器](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/auto-open.gif)
 
-Without it, a report the agent produces either scrolls out of the chat or lands in your repository as a stray `.html` file nobody opens again. An artifact is stored outside the workspace, listed newest-first, and rendered in place — so it survives the conversation that produced it and follows you across projects.
-
-## Install
+## 安装
 
 ```sh
-dsh plugin --profile web add dsh-artifact
+dsh plugin --profile web add dsh-artifact      # dsh web
+dsh plugin --profile desktop add dsh-artifact  # 桌面版
 ```
 
-Restart `dsh web` afterwards: plugins are composed at process start.
+插件在进程启动时加载，安装后需重启 `dsh web` 或桌面版。右侧栏与工件面板需要 DSH 0.1.7 及以上版本。
 
-Ask for a presentation and the agent writes a **slide deck** instead of a page: it opens in a slide editor beside the conversation, where you can edit it, drop pictures in, present it full screen and export it as PowerPoint. Your edits save back to the same artifact.
+## 快速上手
 
-## Getting started
+向智能体提出需要保留的产出即可：
 
-Ask the agent for something worth keeping:
+> 把这周的压测结果整理成一份报告。
 
-> Summarize this week's benchmark results as a report.
+> 做一份 4 页的幻灯片，主题是咖啡店季度回顾。
 
-It calls the `artifact` tool. The call comes back with the document's name as a jump link, and pressing it opens what the agent wrote beside the chat, in the right sidebar. The conversation's **Artifacts** tab lists what that session wrote; the **Artifacts** panel on the left sidebar holds every artifact from every session (DSH 0.1.7+). Click through to read one, `‹` to go back.
+智能体调用 `artifact` 工具写入工件。写入完成时，若该对话正在屏幕上，工件会在右侧栏自动打开；对话中的工具行同时以工件名显示一个跳转链接，之后可随时点击重新打开。
 
-Artifacts written before this version, or on a host older than DSH 0.1.7, carry no session and appear in the library only.
+## 常用用法
 
-The agent also gets a `writing-artifacts` skill, so the HTML it produces is a real document — one reading column, semantic headings, tables that scroll on their own, a palette that follows your theme — rather than an app shell wrapped around three paragraphs.
+**阅读与查找。** 对话的「工件」标签页列出该会话写过的工件；左侧栏的「工件」面板列出所有会话的工件。工件面板中的文档可通过「在侧边栏打开」放到对话旁阅读。
 
-## Opening an artifact
+![工件库：所有工件按时间倒序排列](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-cn.png)
 
-Three ways in, and all three are the app's own:
+**编辑幻灯片。** 要求制作演示文稿时，智能体写出的是幻灯片而非网页。幻灯片在编辑器中打开，支持直接修改文字、拖入图片、调整表格行列、切换主题、全屏放映与导出 `.pptx`；修改会保存回同一份工件，智能体下次读取时即可看到。编辑器由 [`@jannchie/slides`](https://github.com/Jannchie/slides) 提供。
 
-- **The jump link on the call.** Every `artifact` call in the conversation draws the artifact's name as an underlined link. Press it and the document opens in the right sidebar, next to the message you are still reading. Pressing a second link moves that same sidebar tab rather than stacking another.
-- **The sidebar tab.** The right sidebar's add control offers **Artifacts** as a page, so the tab can be open before there is anything to link to. Read and compare artifacts there while the agent goes on talking.
-- **The panel.** The **Artifacts** icon in the left sidebar opens every artifact, from every session, newest first.
+![幻灯片编辑器：缩略图、舞台、格式面板与演讲备注](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/slides.png)
 
-A jump link falls back to the panel whenever the right sidebar cannot take it — on a host older than DSH 0.1.7, or with no session selected — so it always opens something. An artifact panel page also carries an **Open in sidebar** button, for when you found the document in the library and would rather read it beside the conversation.
+**对比历史版本。** 工件被重写后，旧版本会保留下来（默认每份最多 20 个），标题旁出现「历史」按钮。预览模式下按住「按住看这一版」可在同一位置切换新旧版本；源码模式下显示折叠了未变部分的差异。「恢复这一版」无需确认，被替换的内容同样保留为一个版本。
 
-The model is told the link exists, and told not to write one of its own: the store path is internal and a markdown link built from it fails silently.
+**自动打开的范围。** 仅在对话中实时完成的 `write` 会自动打开工件。重新进入会话时回放的旧调用、`read` 与 `list` 不会打开任何内容；右侧栏不可用时（例如未选中会话）也不会自动跳转到工件面板。
 
-## The `artifact` tool
+## `artifact` 工具
 
-| Command | Arguments | What it does |
+| 命令 | 参数 | 作用 |
 |---|---|---|
-| `list` | — | Every artifact, newest first |
-| `read` | `path` | One artifact's full HTML |
-| `write` | `path`, `content` | Create or replace an artifact |
-| `delete` | `path` | Remove an artifact |
+| `list` | — | 按时间倒序列出所有工件 |
+| `read` | `path` | 读取一份工件的完整内容 |
+| `write` | `path`、`content`、`kind` | 新建或替换工件；`kind` 为 `html`（默认）或 `slides` |
+| `delete` | `path` | 删除工件及其历史版本 |
 
-`path` is relative to the store and the `.html` suffix is optional, so `write path:"q3-report"` produces `q3-report.html`. The store is a flat shelf: a path that escapes it, nests inside a subdirectory, or starts with a dot is rejected rather than saved somewhere the browser cannot list.
+`path` 相对于工件目录，`.html` 后缀可省略。智能体同时获得 `writing-artifacts` skill，用于约束 HTML 文档的结构与配色，以及幻灯片可用的格式子集。
 
-Revision history is deliberately not on this tool. The model just wrote the document and knows what it wrote; asking what changed is something a person does a day later, so the answer lives in the panel they are looking at.
+## 存储与渲染
 
-## Revision history
+- 工件保存在 `$DSH_HOME/artifacts`（默认 `~/.dsh/artifacts`），历史版本位于其下的 `.versions/`，幻灯片中的图片位于 `.assets/`。
+- HTML 工件在仅允许脚本的 sandbox iframe 中渲染，无网络访问、无同源权限，所需资源须内联。预览时注入应用当前的颜色变量，工件配色随主题变化。
 
-An artifact the agent rewrites keeps what it replaced. Open one that has been
-written more than once and a **History** button appears beside the title; it is
-absent entirely for an artifact written once, which is most of them.
+## 配置
 
-The revisions sit on a timeline above the document. Pick one and it loads beside
-the current version rather than instead of it:
-
-- In **preview**, hold **Hold to see this one** and the older revision takes the
-  same place on screen — same size, same scroll position — so what changed jumps
-  out instead of having to be hunted across two half-width columns.
-- In **source**, the two are lined up as a diff, with long unchanged stretches
-  folded away.
-
-**Restore this one** makes an older revision current again. It needs no
-confirmation: the content it displaces is kept like any other overwrite, so a
-restore is undone by restoring.
-
-Revisions are stored beside the artifacts, under `.versions/`, and the newest 20
-per artifact are kept (`maxVersionsPerArtifact`). A rewrite that changed nothing
-is not a revision. Deleting an artifact deletes its history with it.
-
-## Where artifacts live
-
-`$DSH_HOME/artifacts` — by default `~/.dsh/artifacts`, beside the sessions and storages the harness already keeps there.
-
-Deliberately not the workspace: artifacts follow the person, not the project, and a repository should not fill up with generated HTML.
-
-## Rendering
-
-Artifacts render in an iframe with `allow-scripts` and nothing else — **no network, no same-origin**. External stylesheets, CDN scripts, webfonts, `fetch`, `localStorage` and cookies are all unavailable, so an artifact inlines everything it needs. The bundled skill teaches this; you only notice it if you hand-write one.
-
-The preview injects the app's live color tokens, so artifacts follow your theme — including a theme another plugin overrode.
-
-## Configuration
-
-Override in your profile's `cordis.patch.yml`:
+在 profile 的 `cordis.patch.yml` 中覆盖：
 
 ```yaml
 - id: artifact
   config:
-    # Artifact directory. Omit or null for $DSH_HOME/artifacts.
-    root: /absolute/path/to/artifacts
-    # Maximum characters accepted in one write.
-    maxArtifactChars: 400000
-    # Superseded revisions kept per artifact. 0 turns history off entirely.
-    maxVersionsPerArtifact: 20
-    # Inject the system-prompt section about when to write an artifact.
-    promptSection: true
-    # Register the bundled writing-artifacts skill.
-    skill: true
-    # Colors handed to previewed artifacts, layered over the live theme.
-    # A key without a leading `--` is read as an alias token.
-    palette:
+    root: /absolute/path/to/artifacts   # 工件目录，默认 $DSH_HOME/artifacts
+    maxArtifactChars: 400000            # 单次写入的字符上限
+    maxVersionsPerArtifact: 20          # 每份工件保留的历史版本数，0 为关闭
+    promptSection: true                 # 在系统提示词中说明何时写工件
+    skill: true                         # 注册 writing-artifacts skill
+    palette:                            # 叠加在当前主题上、传给预览的颜色
       state-business-primary: '#e0552b'
 ```
 
-## Notes
-
-Implementation notes for other plugin authors — the slot contracts, the two-envelope wire protocol, and four traps worth knowing about — are in [NOTES.md](NOTES.md).
+插槽约定与通信协议等实现说明见 [NOTES.md](NOTES.md)。
 
 ## License
 
