@@ -559,6 +559,13 @@ window.__ModuleLoader__.load({
 			".dsh-artifact__danger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}" +
 			// ── list page ───────────────────────────────────────────────────
 			".dsh-artifact__list{flex:1;min-height:0;overflow-y:auto;padding:8px 16px 24px;margin:0;list-style:none;scrollbar-gutter:stable}" +
+			// On a wide panel the list keeps a reading width rather than running a
+			// title and its time a screen apart. Held by padding, not by narrowing
+			// the box, so the scrollbar stays at the panel's edge; the bar's padding
+			// follows the same measure, so its heading sits over the rows' text.
+			".dsh-artifact--list{--dsh-artifact-measure:880px}" +
+			".dsh-artifact--list>.dsh-artifact__bar{padding-inline:max(20px,calc((100% - var(--dsh-artifact-measure))/2 + 8px))}" +
+			".dsh-artifact--list>.dsh-artifact__list{padding-inline:max(16px,calc((100% - var(--dsh-artifact-measure))/2))}" +
 			".dsh-artifact__row{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;min-height:48px;border:none;background:0 0;border-radius:8px;padding:4px 8px;text-align:left;cursor:pointer;user-select:none;color:var(--dsw-alias-label-primary)}" +
 			".dsh-artifact__row:hover{background:var(--dsw-alias-interactive-bg-hover)}" +
 			".dsh-artifact__row:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}" +
@@ -1787,7 +1794,7 @@ window.__ModuleLoader__.load({
 
 				return react.createElement(
 					"div",
-					{ className: "dsh-artifact" },
+					{ className: "dsh-artifact dsh-artifact--list" },
 					react.createElement(
 						"div",
 						{ className: "dsh-artifact__bar" },
