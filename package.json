@@ -72,7 +72,7 @@
 		"@deepseek-ai/schemastery": "^3.18.1"
 	},
 	"devDependencies": {
-		"@jannchie/slides": "link:../slides",
+		"@jannchie/slides": "^0.1.0",
 		"esbuild": "^0.28.2"
 	}
 }
