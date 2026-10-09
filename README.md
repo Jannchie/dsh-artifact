@@ -21,6 +21,8 @@ dsh plugin --profile web add dsh-artifact
 
 Restart `dsh web` afterwards: plugins are composed at process start.
 
+Ask for a presentation and the agent writes a **slide deck** instead of a page: it opens in a slide editor beside the conversation, where you can edit it, drop pictures in, present it full screen and export it as PowerPoint. Your edits save back to the same artifact.
+
 ## Getting started
 
 Ask the agent for something worth keeping:

@@ -91,3 +91,11 @@ The trap is the dependency. Naming `sidebarRightTabs` in this plugin's exported 
 ## A one-shot request needs a lifetime, not just a value
 
 The jump link's fallback holds a path for the panel to consume, and a bare `{ path }` outlives its reader: leave the panel, come back, and a fresh mount consumes the same request again and reopens an artifact the reader had navigated away from. The request carries a sequence and is cleared by the mount that acts on it, which is what lets "open this again" and "the reader went back to the list" be different things.
+
+## Decks, and the two files that are built
+
+An artifact can be a slide deck as well as a page: `write` with `kind: "slides"`, and the store records it in `.kinds/` beside `.sessions/`, by the same per-artifact rule. A deck opens in the editor from `@jannchie/slides` instead of a frame, and the reader's edits save back as they go: the first save of a sitting keeps a revision, later ones replace without one (`keepVersion: false`), so a reader's pauses do not fill the history. Pictures and fonts dropped into a deck are kept in `.assets/<artifact>/`, named by the hash of their bytes, and reach the editor as object URLs over `readArtifactAsset`.
+
+That library cannot be `require`d — the loader reaches only what it registered — so it travels inside the shipped files, and **two of them are generated**: `lib/deck.js` (the format, for the tool's validation) and `lib/client.js` (the browser half, from `src/client.js`, with the editor, Vue and its stylesheet bundled in). Edit `src/client.js`, then `npm run build`. Both are committed, because CI and the publish workflow check and ship the files as they stand, with no install step.
+
+The editor's look is the app's: `SLIDES_THEME` sets its `--slides-*` tokens to the `--dsw-alias-*` ones, each with a fallback.

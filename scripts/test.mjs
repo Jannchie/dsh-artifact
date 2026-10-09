@@ -628,6 +628,71 @@ check(
 	renderRow(settled({ command: "write", path: "x" }), () => {}).props["data-tool"] === "artifact",
 );
 
+console.log("decks");
+{
+	const deckStore = new ArtifactStore(join(base, "decks"));
+	const deck =
+		'<!doctype html><html><head><title>Q3 review</title></head><body><section id="a" style="background:#fff"><h1 style="font-size:96px">Q3</h1></section></body></html>';
+
+	let w = await deckStore.write("q3", deck, "s1", "slides");
+	check("a deck is written as a deck", w.ok && w.value.kind === "slides", w);
+	let l = await deckStore.list();
+	check("the list says it is a deck", l.ok && l.value.artifacts[0]?.kind === "slides", l.value?.artifacts);
+	w = await deckStore.write("q3", deck.replace("Q3</h1>", "Q3 again</h1>"));
+	check("a rewrite that does not say keeps it a deck", w.ok && w.value.kind === "slides", w);
+	let rd = await deckStore.read("q3");
+	check("reading it says so too", rd.ok && rd.value.kind === "slides", rd.value?.kind);
+	await deckStore.write("page", doc);
+	rd = await deckStore.read("page");
+	check("a page with no record is a page", rd.ok && rd.value.kind === "html", rd.value?.kind);
+	w = await deckStore.write("q3", deck, undefined, "chart");
+	check("an unknown kind is refused", !w.ok && w.error.code === "invalid-kind", w);
+
+	const before = await deckStore.listVersions("q3");
+	await deckStore.write("q3", deck.replace("Q3</h1>", "Q3, saved as it goes</h1>"), undefined, undefined, {
+		keepVersion: false,
+	});
+	const after = await deckStore.listVersions("q3");
+	check(
+		"a save that keeps no version adds none",
+		before.ok && after.ok && after.value.versions.length === before.value.versions.length,
+		[before.value?.versions.length, after.value?.versions.length],
+	);
+
+	const png = Buffer.from("89504e470d0a1a0a", "hex").toString("base64");
+	let a = await deckStore.writeAsset("q3", "image/png", png);
+	check("a picture is kept under its hash", a.ok && /^assets\/[0-9a-f]{64}\.png$/.test(a.value.src), a);
+	const again = await deckStore.writeAsset("q3", "image/png", png);
+	check("the same picture twice is one file", again.ok && again.value.src === a.value.src, again);
+	const back = await deckStore.readAsset("q3", a.value.src);
+	check("it reads back byte for byte", back.ok && back.value.base64 === png && back.value.type === "image/png", back);
+	a = await deckStore.writeAsset("q3", "image/svg+xml", png);
+	check("a drawing that could run is refused", !a.ok && a.error.code === "invalid-asset", a);
+	const out = await deckStore.readAsset("q3", "assets/../../q3.html");
+	check("a name that is not the store's own is refused", !out.ok && out.error.code === "invalid-asset", out);
+
+	const gone = await deckStore.delete("q3");
+	check("deleting a deck deletes it", gone.ok, gone);
+	const leftovers = await readdir(join(base, "decks", ".assets")).catch(() => []);
+	check("and its pictures and its kind with it", leftovers.length === 0 && (await deckStore.list()).value.artifacts.every((x) => x.name !== "q3.html"), leftovers);
+
+	const { readDeck, describeDeckDiagnostics } = await import("../lib/deck.js");
+	const read = readDeck(deck.replace("<h1", '<h1 class="x"'));
+	check("the bundled format reads a deck", read.deck.slides.length === 1, read.deck.slides.length);
+	const empty = readDeck("<!doctype html><html><body><p>no slides</p></body></html>");
+	check("and finds no slide where there is none", empty.deck.slides.length === 0, empty.deck.slides.length);
+	const said = describeDeckDiagnostics(readDeck(deck.replace("<h1", "<h1 onclick=\"x()\"")).diagnostics);
+	check("and says what it dropped", Array.isArray(said), said);
+
+	const { renderOutcome: render } = await import("../lib/text.js");
+	const reply = render({
+		ok: true,
+		value: { path: join(base, "decks", "q3.html"), title: "Q3", kind: "slides", dropped: ["Slide 1, line 3: onclick is not kept."] },
+	});
+	check("a deck's reply lists what was dropped", reply.includes("Slide 1, line 3: onclick is not kept."), reply);
+	check("and still names no path", !reply.includes(base), reply);
+}
+
 await rm(base, { recursive: true, force: true });
 console.log(failures === 0 ? "\nALL OK" : "\n" + failures + " FAILURE(S)");
 process.exitCode = failures === 0 ? 0 : 1;
