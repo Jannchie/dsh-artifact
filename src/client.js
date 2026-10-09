@@ -613,7 +613,9 @@ window.__ModuleLoader__.load({
 			// replaced a shipped one has to sit on the shipped grid.
 			".dsh-artifact__tool{display:flex;align-items:center;width:100%;box-sizing:border-box;min-height:24px;color:var(--dsw-alias-label-secondary)}" +
 			".dsh-artifact__toollead{flex:none;display:inline-flex;align-items:center;color:var(--dsw-alias-label-secondary)}" +
-			".dsh-artifact__tooltitle{font-weight:400;transition:color .1s}" +
+			// Sized like the shipped row's own title (13px on a 24px line): left to
+			// inherit, it took the conversation's 16px and towered over the command.
+			".dsh-artifact__tooltitle{font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));font-weight:400;flex:none;white-space:nowrap;transition:color .1s}" +
 			".dsh-artifact__toolsep{background:var(--dsw-alias-label-caption);border-radius:1px;flex:none;width:2px;height:2px;margin:0 8px}" +
 			".dsh-artifact__toolcmd{font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:var(--dsw-alias-label-tertiary);flex:none;white-space:nowrap;transition:color .1s}" +
 			".dsh-artifact__link{font:inherit;font-size:var(--dsh-content-font-size-secondary,13px);line-height:calc(24px + var(--dsh-content-font-delta,0px));color:var(--dsw-alias-label-secondary);text-decoration:underline dotted;text-decoration-color:var(--dsw-alias-label-tertiary);text-decoration-thickness:1px;text-underline-offset:3px;background:0 0;border:none;padding:0;margin:0 0 0 6px;cursor:pointer;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;transition:color .1s}" +
