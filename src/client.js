@@ -857,6 +857,24 @@ window.__ModuleLoader__.load({
 			const commandKey = ARTIFACT_COMMAND_KEYS[model.command];
 			const openTitle = t("row.openTitle", { name: model.name });
 			const canReveal = typeof props.revealArtifact === "function";
+			// A `write` that finishes while this row is on screen opens beside the
+			// chat on its own, once. Only one the reader watched happen: a row
+			// that mounts already settled is history being replayed, and opening
+			// yesterday's pages on the way into a session is not what anyone asked.
+			const live = react.useRef(!model.settled);
+			const shown = react.useRef(false);
+			react.useEffect(() => {
+				if (
+					live.current &&
+					!shown.current &&
+					model.openable &&
+					model.command === "write" &&
+					typeof props.showArtifact === "function"
+				) {
+					shown.current = true;
+					props.showArtifact(model.name);
+				}
+			}, [model.openable, model.command, model.name, props.showArtifact]);
 			const link =
 				model.openable && canReveal
 					? react.createElement(
@@ -1898,6 +1916,21 @@ window.__ModuleLoader__.load({
 				openLibrary();
 			};
 
+			/**
+			 * The same request made without a press: only where it can be read
+			 * beside the conversation. Unlike a press, it never falls back to the
+			 * artifact panel — that would take the reader away from the chat they
+			 * were reading because the agent wrote something.
+			 */
+			const showArtifact = (path) => {
+				if (typeof path !== "string" || path === "" || sidebarController === null) return;
+				try {
+					sidebarController.openTab(TAB_KIND, { params: { path } });
+				} catch {
+					// No mounted Session surface: nothing on screen to open it beside.
+				}
+			};
+
 			const SessionView = (props) =>
 				react.createElement(Browser, { ...props, scope: "session", openLibrary, revealArtifact });
 			// The panel consumes a pending "show this artifact" request, which is
@@ -1982,7 +2015,7 @@ window.__ModuleLoader__.load({
 						name: "tool.call.toolview",
 						key: "artifact",
 						locale: NS,
-						inject: () => ({ revealArtifact }),
+						inject: () => ({ revealArtifact, showArtifact }),
 					},
 					ArtifactToolRow,
 				),

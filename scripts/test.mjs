@@ -184,8 +184,36 @@ await import("../lib/client.js");
 // the factory's `require` answers with the one function the row components call.
 // That is enough to render them for real: a component built from
 // `createElement` returns a plain element tree, which a test can walk and press.
+// The row also keeps two refs and an effect, so the stub carries just enough of
+// a hook runtime for one component at a time: `hooks` is the instance being
+// rendered, and an effect runs after its render, as React's would.
+let hooks = null;
 const reactStub = {
 	createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat() }),
+	useRef: (initial) => {
+		const slot = hooks.cursor++;
+		if (!(slot in hooks.slots)) hooks.slots[slot] = { current: initial };
+		return hooks.slots[slot];
+	},
+	useEffect: (effect) => {
+		hooks.cursor++;
+		hooks.effects.push(effect);
+	},
+};
+/** Render one instance of a component; render it again with `instance.render(props)`. */
+const mountComponent = (Component) => {
+	const instance = { slots: {}, cursor: 0, effects: [] };
+	return {
+		render(props) {
+			hooks = instance;
+			instance.cursor = 0;
+			instance.effects = [];
+			const tree = Component(props);
+			for (const effect of instance.effects) effect();
+			hooks = null;
+			return tree;
+		},
+	};
 };
 const client = registered.factory((id) => (id === "react" ? reactStub : {}));
 const { diffRevisions, foldUnchanged, formatBytes, splitForDiff } = client.__internals;
@@ -588,12 +616,9 @@ const findElement = (element, predicate) => {
 	return findElement(element.children ?? [], predicate);
 };
 const isLink = (node) => node.props?.className === "dsh-artifact__link";
+const rowComponent = () => findRegistered(wired.registrations, "tool.call.toolview", (o) => o.key === "artifact").Component;
 const renderRow = (block, revealArtifact) =>
-	findRegistered(wired.registrations, "tool.call.toolview", (o) => o.key === "artifact").Component({
-		t: (key) => key,
-		block,
-		revealArtifact,
-	});
+	mountComponent(rowComponent()).render({ t: (key) => key, block, revealArtifact });
 const renderLink = (block, revealArtifact) => findElement(renderRow(block, revealArtifact), isLink);
 
 const openedPaths = [];
@@ -627,6 +652,30 @@ check(
 	"every row keeps the tool's own name for the transcript",
 	renderRow(settled({ command: "write", path: "x" }), () => {}).props["data-tool"] === "artifact",
 );
+
+// A write the reader watched finish opens beside the chat by itself; a row
+// replayed from history does not, and neither does anything but a `write`.
+{
+	const shown = [];
+	const showArtifact = (path) => shown.push(path);
+	const live = mountComponent(rowComponent());
+	const running = { phase: "start", callId: "call-1", argsRaw: JSON.stringify({ command: "write", path: "q3-report" }) };
+	live.render({ t: (key) => key, block: running, showArtifact });
+	check("a running write opens nothing yet", shown.length === 0, shown);
+	live.render({ t: (key) => key, block: settled({ command: "write", path: "q3-report" }), showArtifact });
+	check("a write that finishes on screen opens what it wrote", shown.join(",") === "q3-report.html", shown);
+	live.render({ t: (key) => key, block: settled({ command: "write", path: "q3-report" }), showArtifact });
+	check("and only once, however often the row renders again", shown.length === 1, shown);
+
+	shown.length = 0;
+	mountComponent(rowComponent()).render({ t: (key) => key, block: settled({ command: "write", path: "old" }), showArtifact });
+	check("a write replayed from history stays shut", shown.length === 0, shown);
+
+	const reading = mountComponent(rowComponent());
+	reading.render({ t: (key) => key, block: { phase: "start", callId: "c", argsRaw: JSON.stringify({ command: "read", path: "q3" }) }, showArtifact });
+	reading.render({ t: (key) => key, block: settled({ command: "read", path: "q3" }), showArtifact });
+	check("a read opens nothing on its own", shown.length === 0, shown);
+}
 
 console.log("decks");
 {
