@@ -32,7 +32,11 @@ dsh plugin --profile desktop add dsh-artifact  # 桌面版
 
 ## 常用用法
 
-**阅读与查找。** 对话的「工件」标签页列出该会话写过的工件；左侧栏的「工件」面板列出所有会话的工件。工件面板中的文档可通过「在侧边栏打开」放到对话旁阅读。
+**阅读文档。** 报告、速查表、对比分析等内容以自包含的 HTML 文档写出，单栏排版，配色随应用主题变化，表格过宽时独立横向滚动。文档在右侧栏阅读，可切换到源码视图。
+
+![HTML 文档写完后在对话右侧打开](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/document.png)
+
+**查找工件。** 对话的「工件」标签页列出该会话写过的工件；左侧栏的「工件」面板列出所有会话的工件。工件面板中的文档可通过「在侧边栏打开」放到对话旁阅读。
 
 ![工件库：所有工件按时间倒序排列](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-cn.png)
 

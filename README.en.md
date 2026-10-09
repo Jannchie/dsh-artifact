@@ -32,7 +32,11 @@ The agent writes the artifact with the `artifact` tool. If the conversation is o
 
 ## Common tasks
 
-**Reading and finding.** A conversation's **Artifacts** tab lists what that session wrote; the **Artifacts** panel in the left sidebar lists every artifact from every session. **Open in sidebar** moves a document from the panel to the conversation's side.
+**Reading a document.** Reports, cheat sheets and comparisons are written as self-contained HTML documents: one reading column, colors that follow the app's theme, and wide tables that scroll on their own. A document is read in the right sidebar and can be switched to its source.
+
+![An HTML document opened beside the conversation after the agent writes it](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/document.png)
+
+**Finding artifacts.** A conversation's **Artifacts** tab lists what that session wrote; the **Artifacts** panel in the left sidebar lists every artifact from every session. **Open in sidebar** moves a document from the panel to the conversation's side.
 
 ![The artifact library, newest first](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-en.png)
 
