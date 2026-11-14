@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ArtifactStore, COMMENTS_DIR, SESSIONS_DIR, VERSIONS_DIR, extractTitle } from "../lib/store.js";
@@ -763,6 +763,21 @@ check("rejects an escaping path", !(await store.listComments("../outside")).ok);
 check("keeps comments in the dotted directory", (await readdir(join(root, COMMENTS_DIR))).includes("comments-doc.json"));
 await store.delete("comments-doc");
 check("deletes a thread with its artifact", (await store.listComments("comments-doc")).value?.comments.length === 0 && (await readdir(join(root, COMMENTS_DIR)).catch(() => [])).length === 0);
+
+console.log("remote contract");
+// A Remote method the client never mounts is invisible: the gateway gives the
+// browser no `remote[method]`, and the failure surfaces only at click time.
+// Keep the two hand-written lists in lockstep.
+const hostSource = await readFile(new URL("../lib/index.js", import.meta.url), "utf8");
+const clientSource = await readFile(new URL("../src/client.js", import.meta.url), "utf8");
+const hostMethods = [...hostSource.matchAll(/markRemote\(ArtifactService,\s*"([^"]+)"\)/g)].map((match) => match[1]);
+const remoteStart = clientSource.indexOf("const ARTIFACT_REMOTE = {");
+const remoteBlock = clientSource.slice(remoteStart, clientSource.indexOf("};", remoteStart));
+const mountedMethods = [...remoteBlock.matchAll(/descriptor\("([^"]+)"\)/g)].map((match) => match[1]);
+check("the host exposes Remote methods", hostMethods.length > 0, hostMethods);
+check("the client mounts Remote methods", mountedMethods.length > 0, mountedMethods);
+check("every host Remote method is mounted by the client", hostMethods.every((method) => mountedMethods.includes(method)), { hostMethods, mountedMethods });
+check("every mounted method exists on the host", mountedMethods.every((method) => hostMethods.includes(method)), { hostMethods, mountedMethods });
 
 await rm(base, { recursive: true, force: true });
 console.log(failures === 0 ? "\nALL OK" : "\n" + failures + " FAILURE(S)");

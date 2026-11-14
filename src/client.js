@@ -93,6 +93,10 @@ window.__ModuleLoader__.load({
 				descriptor("restoreArtifactVersion"),
 				descriptor("uploadArtifactAsset"),
 				descriptor("readArtifactAsset"),
+				descriptor("listArtifactComments"),
+				descriptor("addArtifactComment"),
+				descriptor("askArtifactComment"),
+				descriptor("resolveArtifactComment"),
 			],
 		};
 
@@ -1355,6 +1359,7 @@ window.__ModuleLoader__.load({
 				// Comments: one thread per quoted passage, stored with the artifact.
 				const [comments, setComments] = react.useState([]);
 				const [commentRects, setCommentRects] = react.useState({});
+				const [commentsError, setCommentsError] = react.useState(null);
 				const [selection, setSelection] = react.useState(null);
 				// The passage being composed for a new comment, frozen when the
 				// selection chip is clicked so clearing the text selection does not
@@ -1464,10 +1469,11 @@ window.__ModuleLoader__.load({
 					async (path) => {
 						const result = await call(remote, "listArtifactComments", { path });
 						if (!result.ok) {
-							setCommentError(t("comments.failed", { message: result.error.message }));
+							setCommentsError(t("comments.failed", { message: result.error.message }));
 							return;
 						}
 						setComments(result.value.comments ?? []);
+						setCommentsError(null);
 					},
 					[remote, t],
 				);
@@ -1494,6 +1500,7 @@ window.__ModuleLoader__.load({
 				react.useEffect(() => {
 					setComments([]);
 					setCommentRects({});
+					setCommentsError(null);
 					setSelection(null);
 					setComposing(null);
 					setNewDraft("");
@@ -1808,13 +1815,15 @@ window.__ModuleLoader__.load({
 					const unresolved = comments.filter((comment) => comment.status === "open");
 					const commentNumber = new Map(unresolved.map((comment, index) => [comment.id, index + 1]));
 					const commentNote =
-						unresolved.length === 0
-							? null
-							: react.createElement(
-									"div",
-									{ className: "dsh-artifact__commentnote" },
-									t("comments.top", { n: unresolved.length }),
-								);
+						commentsError !== null
+							? react.createElement("div", { className: "dsh-artifact__commentnote dsh-artifact__commenterror" }, commentsError)
+							: unresolved.length === 0
+								? null
+								: react.createElement(
+										"div",
+										{ className: "dsh-artifact__commentnote" },
+										t("comments.top", { n: unresolved.length }),
+									);
 
 					// A card floats beside its own marker, so the reader can keep
 					// several threads open without one shared drawer accumulating
