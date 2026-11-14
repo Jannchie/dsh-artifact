@@ -36,6 +36,8 @@ dsh plugin --profile desktop add dsh-artifact  # 桌面版
 
 ![HTML 文档写完后在对话右侧打开](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/document.png)
 
+**评论。** 选中 HTML 工件正文里的文字即可添加评论；每条评论是一个独立的悬浮窗，点锚点打开、再点收起，可在线程里持续追问。评论保存在工件旁，重开时未解决的评论会重新出现，顶部和底部显示剩余数量。点 ✅ 解决后浮窗消失。回答直接写回该评论线程，不进入主对话。
+
 **查找工件。** 对话的「工件」标签页列出该会话写过的工件；左侧栏的「工件」面板列出所有会话的工件。工件面板中的文档可通过「在侧边栏打开」放到对话旁阅读。
 
 ![工件库：所有工件按时间倒序排列](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-cn.png)
@@ -61,7 +63,7 @@ dsh plugin --profile desktop add dsh-artifact  # 桌面版
 
 ## 存储与渲染
 
-- 工件保存在 `$DSH_HOME/artifacts`（默认 `~/.dsh/artifacts`），历史版本位于其下的 `.versions/`，幻灯片中的图片位于 `.assets/`。
+- 工件保存在 `$DSH_HOME/artifacts`（默认 `~/.dsh/artifacts`），历史版本位于其下的 `.versions/`，评论线程位于 `.comments/`，幻灯片中的图片位于 `.assets/`。
 - HTML 工件在仅允许脚本的 sandbox iframe 中渲染，无网络访问、无同源权限，所需资源须内联。预览时注入应用当前的颜色变量，工件配色随主题变化。
 
 ## 配置
