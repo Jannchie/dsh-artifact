@@ -124,6 +124,7 @@ window.__ModuleLoader__.load({
 			"action.back": "返回列表",
 			"action.source": "源码",
 			"action.preview": "预览",
+			"action.download": "下载",
 			"action.delete": "删除",
 			"action.deleteConfirm": "确认删除",
 			"action.refresh": "刷新",
@@ -184,6 +185,7 @@ window.__ModuleLoader__.load({
 			"action.back": "Back to list",
 			"action.source": "Source",
 			"action.preview": "Preview",
+			"action.download": "Download",
 			"action.delete": "Delete",
 			"action.deleteConfirm": "Confirm delete",
 			"action.refresh": "Refresh",
@@ -671,6 +673,12 @@ window.__ModuleLoader__.load({
 			preview: glyph("IconBrowseOutlineRegular", "IconBrowseOutline16"),
 			remove: glyph("IconTrashOutlineRegular", "IconTrashOutline16"),
 			library: glyph("IconBrowseOutlineRegular", "IconBrowseOutline16"),
+			download: glyph(
+				"IconDownloadOutlineRegular",
+				"IconDownloadOutline16",
+				"IconArrowDownOutlineRegular",
+				"IconArrowDownOutline16",
+			),
 			// The conversation row's own glyph: a document being written, which is
 			// what an `artifact` call is. Falls back to the panel glyph, and to
 			// nothing at all on an icon set that renamed both.
@@ -1495,6 +1503,28 @@ window.__ModuleLoader__.load({
 					}
 				}, [open, confirming, refresh, t]);
 
+				// Download the document as the reader sees it. A deck is left out:
+				// its editor already exports .pptx, and the deck subset is not a
+				// standalone page. The anchor path keeps the download local: no
+				// request leaves the page, and the object URL is released after the
+				// browser has started the save.
+				const download = react.useCallback(() => {
+					if (open === null || open.kind === "slides" || typeof document === "undefined") return;
+					const name = baseName(open.path);
+					const fileName = name.endsWith(".html") ? name : name + ".html";
+					const url = URL.createObjectURL(
+						new Blob([open.content], { type: "text/html;charset=utf-8" }),
+					);
+					const anchor = document.createElement("a");
+					anchor.href = url;
+					anchor.download = fileName;
+					anchor.rel = "noopener";
+					document.body.appendChild(anchor);
+					anchor.click();
+					anchor.remove();
+					window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+				}, [open]);
+
 				const statusLine =
 					status === null
 						? null
@@ -1664,6 +1694,19 @@ window.__ModuleLoader__.load({
 										{ disabled: busy, onClick: restore, title: t("action.restore") },
 										null,
 										t("action.restore"),
+									),
+							open.kind === "slides"
+								? null
+								: iconButton(
+										{
+											onClick: download,
+											title: t("action.download"),
+											"aria-label": t("action.download"),
+										},
+										Icon.download,
+										// An icon set without a download glyph still gets a
+										// usable control: the button becomes its own label.
+										Icon.download === null ? t("action.download") : null,
 									),
 							iconButton(
 								{
