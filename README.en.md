@@ -36,6 +36,8 @@ The agent writes the artifact with the `artifact` tool. If the conversation is o
 
 ![An HTML document opened beside the conversation after the agent writes it](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/document.png)
 
+**Comments.** Select text in an HTML artifact to add a comment. Threads are stored beside the artifact, unresolved ones reappear when it is reopened, and the count is shown above and below the document. Resolve a thread with ✅ to hide it. Follow-up answers are written into that comment thread rather than into the chat.
+
 **Finding artifacts.** A conversation's **Artifacts** tab lists what that session wrote; the **Artifacts** panel in the left sidebar lists every artifact from every session. **Open in sidebar** moves a document from the panel to the conversation's side.
 
 ![The artifact library, newest first](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-en.png)
@@ -61,7 +63,7 @@ The agent writes the artifact with the `artifact` tool. If the conversation is o
 
 ## Storage and rendering
 
-- Artifacts live in `$DSH_HOME/artifacts` (by default `~/.dsh/artifacts`), with revisions under `.versions/` and images placed in decks under `.assets/`.
+- Artifacts live in `$DSH_HOME/artifacts` (by default `~/.dsh/artifacts`), with revisions under `.versions/`, comment threads under `.comments/`, and images placed in decks under `.assets/`.
 - HTML artifacts render in a sandboxed iframe that allows scripts only: no network and no same-origin access, so everything an artifact needs is inlined. The preview receives the app's current color tokens and follows its theme.
 
 ## Configuration

@@ -1,7 +1,7 @@
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ArtifactStore, SESSIONS_DIR, VERSIONS_DIR, extractTitle } from "../lib/store.js";
+import { ArtifactStore, COMMENTS_DIR, SESSIONS_DIR, VERSIONS_DIR, extractTitle } from "../lib/store.js";
 
 /**
  * Exercise the store against a REAL temporary directory.
@@ -741,6 +741,28 @@ console.log("decks");
 	check("a deck's reply lists what was dropped", reply.includes("Slide 1, line 3: onclick is not kept."), reply);
 	check("and still names no path", !reply.includes(base), reply);
 }
+
+console.log("comments");
+const commentsDoc = "<!doctype html><html><head><title>Comments</title></head><body><p>Hello world</p></body></html>";
+await store.write("comments-doc", commentsDoc);
+let comment = await store.addComment("comments-doc", {
+	quote: "Hello", prefix: "", suffix: " world", text: "Why hello?",
+});
+check("opens a thread", comment.ok && comment.value.comment.status === "open", comment);
+check("the note is its first message", comment.ok && comment.value.comment.messages.length === 1 && comment.value.comment.messages[0].role === "user", comment.value?.comment);
+const commentId = comment.value?.comment.id;
+comment = await store.listComments("comments-doc");
+check("lists the thread", comment.ok && comment.value.comments.length === 1, comment);
+comment = await store.appendCommentMessage("comments-doc", commentId, "assistant", "Because.");
+check("appends a reply in order", comment.ok && comment.value.comment.messages.length === 2 && comment.value.comment.messages[1].role === "assistant", comment);
+comment = await store.resolveComment("comments-doc", commentId, true);
+check("resolves a thread", comment.ok && comment.value.comment.status === "resolved" && typeof comment.value.comment.resolvedAt === "string", comment);
+check("keeps the resolved thread", (await store.listComments("comments-doc")).value?.comments.length === 1);
+check("rejects an empty quote", !(await store.addComment("comments-doc", { quote: " ", text: "x" })).ok);
+check("rejects an escaping path", !(await store.listComments("../outside")).ok);
+check("keeps comments in the dotted directory", (await readdir(join(root, COMMENTS_DIR))).includes("comments-doc.json"));
+await store.delete("comments-doc");
+check("deletes a thread with its artifact", (await store.listComments("comments-doc")).value?.comments.length === 0 && (await readdir(join(root, COMMENTS_DIR)).catch(() => [])).length === 0);
 
 await rm(base, { recursive: true, force: true });
 console.log(failures === 0 ? "\nALL OK" : "\n" + failures + " FAILURE(S)");
