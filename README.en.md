@@ -36,7 +36,7 @@ The agent writes the artifact with the `artifact` tool. If the conversation is o
 
 ![An HTML document opened beside the conversation after the agent writes it](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/document.png)
 
-**Comments.** Select text in an HTML artifact to add a comment. Threads are stored beside the artifact, unresolved ones reappear when it is reopened, and the count is shown above and below the document. Resolve a thread with ✅ to hide it. Follow-up answers are written into that comment thread rather than into the chat.
+**Comments.** Select text in an HTML artifact to add a comment. Each comment is its own floating thread: click its marker to open it, click again to collapse it, and keep the conversation there. Threads are stored beside the artifact, unresolved ones reappear when it is reopened, and the count is shown above and below the document. Resolve a thread with ✅ to hide it. Answers are written into that comment thread rather than into the chat.
 
 **Finding artifacts.** A conversation's **Artifacts** tab lists what that session wrote; the **Artifacts** panel in the left sidebar lists every artifact from every session. **Open in sidebar** moves a document from the panel to the conversation's side.
 

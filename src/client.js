@@ -151,6 +151,7 @@ window.__ModuleLoader__.load({
 			"comments.resolved": "已解决",
 			"comments.orphaned": "原文位置已变化",
 			"comments.close": "关闭",
+			"comments.collapse": "收起",
 			"comments.back": "返回",
 			"comments.failed": "评论失败：{message}",
 			"comments.roleUser": "提问",
@@ -230,6 +231,7 @@ window.__ModuleLoader__.load({
 			"comments.resolved": "Resolved",
 			"comments.orphaned": "The passage moved",
 			"comments.close": "Close",
+			"comments.collapse": "Collapse",
 			"comments.back": "Back",
 			"comments.failed": "Comment failed: {message}",
 			"comments.roleUser": "Reader",
@@ -424,7 +426,8 @@ window.__ModuleLoader__.load({
 			"function rectOf(r){var x=r.getBoundingClientRect(),d=document.scrollingElement||document.documentElement;return{top:x.top,left:x.left,width:x.width,height:x.height,scrollTop:d.scrollTop}}" +
 			"function locate(a){var t=(document.body&&document.body.textContent)||'',i=-1;if(a.prefix||a.suffix){i=t.indexOf((a.prefix||'')+(a.quote||'')+(a.suffix||''));if(i>=0)i+=(a.prefix||'').length}if(i<0)i=t.indexOf(a.quote||'');if(i<0){parent.postMessage({__dshArtifactLocated:{id:a.id,rect:null}},'*');return}var r=rangeAt(i,(a.quote||'').length);if(!r){parent.postMessage({__dshArtifactLocated:{id:a.id,rect:null}},'*');return}var x=rectOf(r);parent.postMessage({__dshArtifactLocated:{id:a.id,rect:{top:x.top,left:x.left,width:x.width,height:x.height},scrollTop:x.scrollTop}},'*')}" +
 			"function selection(){var s=getSelection();if(!s||s.isCollapsed||s.rangeCount===0)return null;var r=s.getRangeAt(0),quote=(s.toString()||'').trim();if(!quote)return null;var t=(document.body&&document.body.textContent)||'',pre=document.createRange();pre.selectNodeContents(document.body);try{pre.setEnd(r.startContainer,r.startOffset)}catch(e){return null}var off=pre.toString().length,x=rectOf(r);if(x.width===0&&x.height===0)return null;return{quote:quote,prefix:t.slice(Math.max(0,off-40),off),suffix:t.slice(off+quote.length,off+quote.length+40),rect:{top:x.top,left:x.left,width:x.width,height:x.height},scrollTop:x.scrollTop}}" +
-			"function emit(){var a=selection();if(a)parent.postMessage({__dshArtifactSelection:a},'*')}" +
+			"function emit(){var a=selection();parent.postMessage(a?{__dshArtifactSelection:a}:{__dshArtifactSelection:null},'*')}" +
+			"addEventListener('selectionchange',function(){var s=getSelection();if(!s||s.isCollapsed||s.rangeCount===0){parent.postMessage({__dshArtifactSelection:null},'*')}},{passive:true});" +
 			"addEventListener('mouseup',function(){setTimeout(emit,0)},{passive:true});" +
 			"addEventListener('keyup',function(e){if(e.key==='Shift'||e.key==='Control'||e.key==='Meta'||e.key==='Alt')return;setTimeout(emit,0)},{passive:true});" +
 			"addEventListener('scroll',function(){if(Date.now()-q<150)return;parent.postMessage({__dshArtifactScroll:(document.scrollingElement||document.documentElement).scrollTop},'*')},{passive:true});" +
@@ -656,39 +659,38 @@ window.__ModuleLoader__.load({
 			".dsh-artifact__difffold{padding:4px 20px 4px 22px;font-size:12px;color:var(--dsw-alias-label-tertiary)}" +
 			".dsh-artifact__diffnote{padding:16px 20px;font-size:13px;line-height:20px;color:var(--dsw-alias-label-tertiary)}" +
 			// ── comments ─────────────────────────────────────────────────────
-			".dsh-artifact__commentnote{display:block;width:100%;box-sizing:border-box;border:0;border-bottom:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:12px;line-height:18px;padding:5px 20px;text-align:left;cursor:pointer;flex:none}" +
-			".dsh-artifact__commentnote:hover{color:var(--dsw-alias-label-primary)}" +
+			".dsh-artifact__commentnote{display:block;width:100%;box-sizing:border-box;border:0;border-bottom:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:12px;line-height:18px;padding:5px 20px;text-align:left;flex:none}" +
 			".dsh-artifact__overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}" +
 			".dsh-artifact__marker{position:absolute;transform:translate(-50%,-100%);min-width:20px;height:20px;padding:0 5px;border-radius:10px;border:2px solid var(--dsw-alias-bg-base);background:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-bg-base);font-family:inherit;font-size:11px;font-weight:600;line-height:16px;cursor:pointer;pointer-events:auto}" +
 			".dsh-artifact__marker:hover{filter:brightness(1.1)}" +
+			".dsh-artifact__marker--open{box-shadow:0 0 0 3px var(--dsw-alias-state-business-primary)}" +
 			".dsh-artifact__selection{position:absolute;transform:translateY(5px);pointer-events:auto;padding:3px 9px;border-radius:6px;border:1px solid var(--dsw-alias-state-business-primary);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-state-business-primary);font-family:inherit;font-size:12px;font-weight:500;line-height:16px;cursor:pointer;white-space:nowrap}" +
-			".dsh-artifact__comments{position:absolute;top:12px;right:12px;bottom:12px;width:340px;max-width:calc(100% - 24px);display:flex;flex-direction:column;pointer-events:auto;z-index:2;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;box-shadow:0 8px 24px rgb(0 0 0 / .18);overflow:hidden;font-size:13px;color:var(--dsw-alias-label-primary)}" +
-			".dsh-artifact__commentshead{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:none}" +
-			".dsh-artifact__commentscount{color:var(--dsw-alias-label-tertiary);font-size:12px;margin-right:auto}" +
-			".dsh-artifact__text{border:0;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;padding:4px 6px;border-radius:4px;cursor:pointer}" +
-			".dsh-artifact__text:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}" +
-			".dsh-artifact__text:disabled{opacity:.5;cursor:default}" +
-			".dsh-artifact__commentempty,.dsh-artifact__commentstatus,.dsh-artifact__commenterror{padding:10px 12px;color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px}" +
+			".dsh-artifact__commentcard{position:absolute;width:340px;max-width:calc(100% - 24px);max-height:440px;display:flex;flex-direction:column;pointer-events:auto;z-index:3;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;box-shadow:0 8px 24px rgb(0 0 0 / .18);overflow:hidden;font-size:13px;color:var(--dsw-alias-label-primary)}" +
+			".dsh-artifact__commentcardhead{display:flex;align-items:center;gap:2px;padding:6px 6px 6px 10px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:none}" +
+			".dsh-artifact__commentcardquote{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}" +
+			".dsh-artifact__commentcollapse,.dsh-artifact__commentresolve{border:0;background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:13px;line-height:20px;width:24px;height:24px;border-radius:4px;cursor:pointer;flex:none}" +
+			".dsh-artifact__commentcollapse:hover,.dsh-artifact__commentresolve:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}" +
+			".dsh-artifact__commentresolve{color:var(--dsw-alias-state-business-primary);font-size:15px}" +
+			".dsh-artifact__commentresolve:disabled{opacity:.45;cursor:default}" +
+			".dsh-artifact__commentmessages{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;max-height:240px}" +
+			".dsh-artifact__commentcomposer{display:flex;flex-direction:column;gap:8px;padding:8px 10px 10px;border-top:1px solid var(--dsw-alias-border-l2);flex:none}" +
+			".dsh-artifact__commentcard>.dsh-artifact__commentinput{width:auto;margin:10px 10px 0;min-height:64px}" +
+			".dsh-artifact__commentcard>.dsh-artifact__commenterror{margin:0 10px}" +
+			".dsh-artifact__commentcard>.dsh-artifact__commentactions{padding:8px 10px 10px}" +
+			".dsh-artifact__commentempty,.dsh-artifact__commentstatus,.dsh-artifact__commenterror{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;padding:3px 0}" +
 			".dsh-artifact__commenterror{color:var(--dsw-alias-state-error-primary)}" +
-			".dsh-artifact__commentlist{overflow:auto;flex:1;min-height:0}" +
-			".dsh-artifact__commentrow{display:flex;flex-direction:column;gap:4px;width:100%;box-sizing:border-box;border:0;border-bottom:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;padding:9px 12px;cursor:pointer}" +
-			".dsh-artifact__commentrow:hover{background:var(--dsw-alias-interactive-bg-hover)}" +
-			".dsh-artifact__commentrow--resolved{opacity:.6}" +
-			".dsh-artifact__commentrowtitle{font-size:13px;line-height:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}" +
-			".dsh-artifact__commentrowmeta{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary)}" +
-			".dsh-artifact__thread{display:flex;flex-direction:column;gap:10px;padding:10px 12px;overflow:auto;flex:1;min-height:0}" +
-			".dsh-artifact__quote{margin:0;padding:6px 9px;border-left:2px solid var(--dsw-alias-state-business-primary);background:var(--dsw-alias-markdown-code-block);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px;white-space:pre-wrap;max-height:120px;overflow:auto}" +
-			".dsh-artifact__quote span{display:block;color:var(--dsw-alias-label-tertiary);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}" +
 			".dsh-artifact__message{font-size:13px;line-height:19px;white-space:pre-wrap;word-break:break-word}" +
 			".dsh-artifact__message--assistant{background:var(--dsw-alias-markdown-code-block);border-radius:6px;padding:7px 9px}" +
 			".dsh-artifact__messagerole{display:block;color:var(--dsw-alias-label-tertiary);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}" +
-			".dsh-artifact__composer{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-top:1px solid var(--dsw-alias-border-l2);flex:none}" +
 			".dsh-artifact__commentinput{width:100%;box-sizing:border-box;min-height:70px;max-height:180px;resize:vertical;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:19px;padding:7px 9px}" +
 			".dsh-artifact__commentinput:focus{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-1px}" +
 			".dsh-artifact__commentactions{display:flex;align-items:center;gap:8px;justify-content:flex-end}" +
 			".dsh-artifact__primary{border:0;border-radius:6px;background:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-bg-base);font-family:inherit;font-size:12px;font-weight:500;line-height:18px;padding:5px 12px;cursor:pointer}" +
 			".dsh-artifact__primary:disabled{opacity:.45;cursor:default}" +
-			// ── status line ─────────────────────────────────────────────────
+			".dsh-artifact__text{border:0;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;padding:4px 6px;border-radius:4px;cursor:pointer}" +
+			".dsh-artifact__text:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}" +
+			".dsh-artifact__text:disabled{opacity:.5;cursor:default}" +
+			// ── status line ─────────────────────────────────────────────────			// ── status line ─────────────────────────────────────────────────
 			".dsh-artifact__status{font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);padding:8px 20px;border-top:1px solid var(--dsw-alias-border-l2);flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
 			// ── the conversation's artifact row ─────────────────────────────
 			// Every rule below is copied from ui-tool's own Tool row rather than
@@ -1354,11 +1356,18 @@ window.__ModuleLoader__.load({
 				const [comments, setComments] = react.useState([]);
 				const [commentRects, setCommentRects] = react.useState({});
 				const [selection, setSelection] = react.useState(null);
-				const [commentsOpen, setCommentsOpen] = react.useState(false);
-				const [threadId, setThreadId] = react.useState(null);
-				const [commentDraft, setCommentDraft] = react.useState("");
-				const [commentBusy, setCommentBusy] = react.useState(false);
-				const [commentError, setCommentError] = react.useState(null);
+				// The passage being composed for a new comment, frozen when the
+				// selection chip is clicked so clearing the text selection does not
+				// discard a draft half typed in the parent page.
+				const [composing, setComposing] = react.useState(null);
+				const [newDraft, setNewDraft] = react.useState("");
+				const [newBusy, setNewBusy] = react.useState(false);
+				const [newError, setNewError] = react.useState(null);
+				// Each unresolved comment owns one floating card; markers toggle it.
+				const [openThreads, setOpenThreads] = react.useState([]);
+				const [threadDrafts, setThreadDrafts] = react.useState({});
+				const [threadBusy, setThreadBusy] = react.useState({});
+				const [threadErrors, setThreadErrors] = react.useState({});
 				const [frameScroll, setFrameScroll] = react.useState(0);
 				const currentFrame = react.useRef(null);
 				const olderFrame = react.useRef(null);
@@ -1385,7 +1394,11 @@ window.__ModuleLoader__.load({
 						}
 						if (event.source !== currentFrame.current?.contentWindow) return;
 						const selected = event.data?.__dshArtifactSelection;
-						if (selected !== undefined && selected !== null) {
+						if (selected !== undefined) {
+							if (selected === null) {
+								setSelection(null);
+								return;
+							}
 							if (typeof selected.quote === "string" && selected.quote.trim() !== "" && selected.rect) {
 								setSelection({
 									quote: selected.quote,
@@ -1482,10 +1495,14 @@ window.__ModuleLoader__.load({
 					setComments([]);
 					setCommentRects({});
 					setSelection(null);
-					setThreadId(null);
-					setCommentsOpen(false);
-					setCommentDraft("");
-					setCommentError(null);
+					setComposing(null);
+					setNewDraft("");
+					setNewBusy(false);
+					setNewError(null);
+					setOpenThreads([]);
+					setThreadDrafts({});
+					setThreadBusy({});
+					setThreadErrors({});
 					if (open !== null) loadComments(open.path);
 				}, [open?.path, loadComments]);
 
@@ -1497,99 +1514,121 @@ window.__ModuleLoader__.load({
 					setComments((previous) => previous.map((item) => (item.id === comment.id ? comment : item)));
 				}, []);
 
-				const toggleComments = react.useCallback(() => {
-					setCommentsOpen((value) => {
-						const next = !value;
-						if (next) {
-							setCommentDraft("");
-							setCommentError(null);
-						}
-						return next;
-					});
+				const toggleThread = react.useCallback((commentId) => {
+					setOpenThreads((previous) =>
+						previous.includes(commentId)
+							? previous.filter((id) => id !== commentId)
+							: [...previous, commentId],
+					);
 				}, []);
 
 				const startComment = react.useCallback(() => {
 					if (selection === null) return;
-					setThreadId(null);
-					setCommentDraft("");
-					setCommentError(null);
-					setCommentsOpen(true);
+					setComposing(selection);
+					setSelection(null);
+					setNewDraft("");
+					setNewError(null);
 				}, [selection]);
 
-				const closeComments = react.useCallback(() => {
-					setCommentsOpen(false);
-					setThreadId(null);
-					setCommentDraft("");
-					setCommentError(null);
+				const cancelComposing = react.useCallback(() => {
+					setComposing(null);
+					setNewDraft("");
+					setNewError(null);
+				}, []);
+
+				const setThreadDraft = react.useCallback((commentId, text) => {
+					setThreadDrafts((previous) => ({ ...previous, [commentId]: text }));
+				}, []);
+
+				const setThreadError = react.useCallback((commentId, message) => {
+					setThreadErrors((previous) => {
+						const next = { ...previous };
+						if (message === null) delete next[commentId];
+						else next[commentId] = message;
+						return next;
+					});
+				}, []);
+
+				const setThreadWorking = react.useCallback((commentId, working) => {
+					setThreadBusy((previous) => ({ ...previous, [commentId]: working }));
 				}, []);
 
 				const submitComment = react.useCallback(async () => {
-					if (open === null || selection === null) return;
-					const text = commentDraft.trim();
+					if (open === null || composing === null) return;
+					const text = newDraft.trim();
 					if (text === "") return;
-					setCommentBusy(true);
-					setCommentError(null);
+					setNewBusy(true);
+					setNewError(null);
 					const created = await call(remote, "addArtifactComment", {
 						path: open.path,
-						quote: selection.quote,
-						prefix: selection.prefix,
-						suffix: selection.suffix,
+						quote: composing.quote,
+						prefix: composing.prefix,
+						suffix: composing.suffix,
 						text,
 					});
 					if (!created.ok) {
-						setCommentError(t("comments.failed", { message: created.error.message }));
-						setCommentBusy(false);
+						setNewError(t("comments.failed", { message: created.error.message }));
+						setNewBusy(false);
 						return;
 					}
 					const comment = created.value.comment;
 					setComments((previous) => [...previous, comment]);
-					setThreadId(comment.id);
-					setSelection(null);
-					setCommentDraft("");
+					setOpenThreads((previous) => [...previous, comment.id]);
+					setComposing(null);
+					setNewDraft("");
+					setThreadWorking(comment.id, true);
 					const answered = await call(remote, "askArtifactComment", {
 						path: open.path,
 						commentId: comment.id,
 					});
 					if (answered.ok) replaceComment(answered.value.comment);
-					else setCommentError(t("comments.failed", { message: answered.error.message }));
-					setCommentBusy(false);
-				}, [open, selection, commentDraft, remote, t, replaceComment]);
+					else setThreadError(comment.id, t("comments.failed", { message: answered.error.message }));
+					setThreadWorking(comment.id, false);
+					setNewBusy(false);
+				}, [open, composing, newDraft, remote, t, replaceComment, setThreadWorking, setThreadError]);
 
-				const sendReply = react.useCallback(async () => {
-					if (open === null || threadId === null) return;
-					const text = commentDraft.trim();
-					if (text === "") return;
-					setCommentBusy(true);
-					setCommentError(null);
-					const result = await call(remote, "askArtifactComment", {
-						path: open.path,
-						commentId: threadId,
-						text,
-					});
-					if (result.ok) {
-						replaceComment(result.value.comment);
-						setCommentDraft("");
-					} else {
-						setCommentError(t("comments.failed", { message: result.error.message }));
-					}
-					setCommentBusy(false);
-				}, [open, threadId, commentDraft, remote, t, replaceComment]);
+				const sendReply = react.useCallback(
+					async (commentId) => {
+						if (open === null) return;
+						const text = (threadDrafts[commentId] ?? "").trim();
+						if (text === "") return;
+						setThreadWorking(commentId, true);
+						setThreadError(commentId, null);
+						const result = await call(remote, "askArtifactComment", {
+							path: open.path,
+							commentId,
+							text,
+						});
+						if (result.ok) {
+							replaceComment(result.value.comment);
+							setThreadDraft(commentId, "");
+						} else {
+							setThreadError(commentId, t("comments.failed", { message: result.error.message }));
+						}
+						setThreadWorking(commentId, false);
+					},
+					[open, threadDrafts, remote, t, replaceComment, setThreadWorking, setThreadError, setThreadDraft],
+				);
 
-				const setThreadResolved = react.useCallback(
-					async (resolved) => {
-						if (open === null || threadId === null) return;
-						setCommentBusy(true);
-						setCommentError(null);
+				const resolveThread = react.useCallback(
+					async (commentId) => {
+						if (open === null) return;
+						setThreadWorking(commentId, true);
+						setThreadError(commentId, null);
 						const result = await call(remote, "resolveArtifactComment", {
 							path: open.path,
-							commentId: threadId,
-							resolved,
+							commentId,
+							resolved: true,
 						});
-						if (result.ok) replaceComment(result.value.comment);
-						else setCommentError(t("comments.failed", { message: result.error.message }));
-						setCommentBusy(false);
+						if (result.ok) {
+							replaceComment(result.value.comment);
+							setOpenThreads((previous) => previous.filter((id) => id !== commentId));
+						} else {
+							setThreadError(commentId, t("comments.failed", { message: result.error.message }));
+						}
+						setThreadWorking(commentId, false);
 					},
-					[open, threadId, remote, t, replaceComment],
+					[open, remote, t, replaceComment, setThreadWorking, setThreadError],
 				);
 
 				/**
@@ -1767,230 +1806,182 @@ window.__ModuleLoader__.load({
 				if (open !== null) {
 					const comparing = compare !== null;
 					const unresolved = comments.filter((comment) => comment.status === "open");
-					const activeThread = threadId === null ? null : comments.find((comment) => comment.id === threadId) ?? null;
 					const commentNumber = new Map(unresolved.map((comment, index) => [comment.id, index + 1]));
 					const commentNote =
 						unresolved.length === 0
 							? null
 							: react.createElement(
-									"button",
-									{
-										type: "button",
-										className: "dsh-artifact__commentnote",
-										onClick: () => {
-											setCommentsOpen(true);
-											setThreadId(null);
-											setCommentDraft("");
-										},
-									},
+									"div",
+									{ className: "dsh-artifact__commentnote" },
 									t("comments.top", { n: unresolved.length }),
 								);
 
-					const commentRow = (comment) =>
+					// A card floats beside its own marker, so the reader can keep
+					// several threads open without one shared drawer accumulating
+					// every comment in the artifact.
+					const cardStyle = (rect, offset) => ({
+						top: "clamp(12px, " + Math.round(rect.contentTop - frameScroll + offset) + "px, calc(100% - 280px))",
+						left: "clamp(12px, " + Math.round(rect.left) + "px, calc(100% - 356px))",
+					});
+
+					const renderMessage = (message) =>
 						react.createElement(
-							"button",
+							"div",
 							{
-								key: comment.id,
-								type: "button",
-								className: "dsh-artifact__commentrow" + (comment.status === "resolved" ? " dsh-artifact__commentrow--resolved" : ""),
-								onClick: () => {
-									setThreadId(comment.id);
-									setCommentDraft("");
-									setCommentError(null);
-								},
+								key: message.id,
+								className:
+									"dsh-artifact__message" +
+									(message.role === "assistant" ? " dsh-artifact__message--assistant" : ""),
 							},
 							react.createElement(
 								"span",
-								{ className: "dsh-artifact__commentrowtitle" },
-								comment.quote.length > 90 ? comment.quote.slice(0, 90) + "…" : comment.quote,
+								{ className: "dsh-artifact__messagerole" },
+								message.role === "assistant" ? t("comments.roleAssistant") : t("comments.roleUser"),
 							),
-							react.createElement(
-								"span",
-								{ className: "dsh-artifact__commentrowmeta" },
-								comment.status === "resolved"
-									? t("comments.resolved")
-									: commentRects[comment.id] === null
-										? t("comments.orphaned")
-										: t("comments.count", { n: comment.messages.length }),
-							),
+							react.createElement("div", null, message.text),
 						);
 
-					const commentPanel =
-						!commentsOpen || open.kind === "slides"
+					const renderThreadCard = (comment, rect) => {
+						const busy = threadBusy[comment.id] === true;
+						const draft = threadDrafts[comment.id] ?? "";
+						const error = threadErrors[comment.id];
+						const quote = comment.quote.length > 90 ? comment.quote.slice(0, 90) + "…" : comment.quote;
+						return react.createElement(
+							"div",
+							{
+								key: "thread-" + comment.id,
+								className: "dsh-artifact__commentcard",
+								style: cardStyle(rect, 18),
+								role: "dialog",
+								"aria-label": t("comments.title"),
+							},
+							react.createElement(
+								"div",
+								{ className: "dsh-artifact__commentcardhead" },
+								react.createElement("span", { className: "dsh-artifact__commentcardquote", title: comment.quote }, quote),
+								react.createElement(
+									"button",
+									{
+										type: "button",
+										className: "dsh-artifact__commentcollapse",
+										title: t("comments.collapse"),
+										"aria-label": t("comments.collapse"),
+										onClick: () => toggleThread(comment.id),
+									},
+									"▾",
+								),
+								react.createElement(
+									"button",
+									{
+										type: "button",
+										className: "dsh-artifact__commentresolve",
+										title: t("comments.resolve"),
+										"aria-label": t("comments.resolve"),
+										disabled: busy,
+										onClick: () => resolveThread(comment.id),
+									},
+									"✓",
+								),
+							),
+							react.createElement(
+								"div",
+								{ className: "dsh-artifact__commentmessages" },
+								comment.messages.map(renderMessage),
+								busy ? react.createElement("div", { className: "dsh-artifact__commentstatus" }, t("comments.sending")) : null,
+								error === undefined ? null : react.createElement("div", { className: "dsh-artifact__commenterror" }, error),
+							),
+							react.createElement(
+								"div",
+								{ className: "dsh-artifact__commentcomposer" },
+								react.createElement("textarea", {
+									className: "dsh-artifact__commentinput",
+									value: draft,
+									placeholder: t("comments.replyPlaceholder"),
+									onChange: (event) => setThreadDraft(comment.id, event.target.value),
+									onKeyDown: (event) => {
+										if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+											event.preventDefault();
+											sendReply(comment.id);
+										}
+									},
+								}),
+								react.createElement(
+									"button",
+									{
+										type: "button",
+										className: "dsh-artifact__primary",
+										disabled: busy || draft.trim() === "",
+										onClick: () => sendReply(comment.id),
+									},
+									t("comments.send"),
+								),
+							),
+						);
+					};
+
+					const newCommentCard =
+						composing === null
 							? null
 							: react.createElement(
 									"div",
-									{ className: "dsh-artifact__comments", role: "dialog", "aria-label": t("comments.title") },
+									{
+										className: "dsh-artifact__commentcard",
+										style: cardStyle(composing, 18),
+										role: "dialog",
+										"aria-label": t("comments.add"),
+									},
 									react.createElement(
 										"div",
-										{ className: "dsh-artifact__commentshead" },
-										activeThread === null
-											? null
-											: react.createElement(
-													"button",
-													{
-														type: "button",
-														className: "dsh-artifact__text",
-														onClick: () => {
-															setThreadId(null);
-															setCommentDraft("");
-														},
-													},
-													t("comments.back"),
-												),
-										react.createElement("strong", null, t("comments.title")),
+										{ className: "dsh-artifact__commentcardhead" },
 										react.createElement(
 											"span",
-											{ className: "dsh-artifact__commentscount" },
-											unresolved.length === 0 ? "" : t("comments.count", { n: unresolved.length }),
+											{ className: "dsh-artifact__commentcardquote", title: composing.quote },
+											composing.quote.length > 90 ? composing.quote.slice(0, 90) + "…" : composing.quote,
 										),
 										react.createElement(
 											"button",
-											{ type: "button", className: "dsh-artifact__text", onClick: closeComments },
+											{
+												type: "button",
+												className: "dsh-artifact__commentcollapse",
+												title: t("comments.close"),
+												"aria-label": t("comments.close"),
+												onClick: cancelComposing,
+											},
+											"×",
+										),
+									),
+									react.createElement("textarea", {
+										className: "dsh-artifact__commentinput",
+										value: newDraft,
+										placeholder: t("comments.placeholder"),
+										onChange: (event) => setNewDraft(event.target.value),
+										onKeyDown: (event) => {
+											if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+												event.preventDefault();
+												submitComment();
+											}
+										},
+									}),
+									newError === null ? null : react.createElement("div", { className: "dsh-artifact__commenterror" }, newError),
+									react.createElement(
+										"div",
+										{ className: "dsh-artifact__commentactions" },
+										react.createElement(
+											"button",
+											{
+												type: "button",
+												className: "dsh-artifact__primary",
+												disabled: newBusy || newDraft.trim() === "",
+												onClick: submitComment,
+											},
+											t("comments.send"),
+										),
+										react.createElement(
+											"button",
+											{ type: "button", className: "dsh-artifact__text", onClick: cancelComposing },
 											t("comments.close"),
 										),
 									),
-									commentError === null
-										? null
-										: react.createElement("div", { className: "dsh-artifact__commenterror" }, commentError),
-									activeThread !== null
-										? react.createElement(
-												"div",
-												{ className: "dsh-artifact__thread" },
-												react.createElement(
-													"blockquote",
-													{ className: "dsh-artifact__quote" },
-													react.createElement("span", null, t("comments.quote")),
-													activeThread.quote,
-												),
-												activeThread.messages.map((message) =>
-													react.createElement(
-														"div",
-														{
-															key: message.id,
-															className:
-																"dsh-artifact__message" +
-																(message.role === "assistant" ? " dsh-artifact__message--assistant" : ""),
-														},
-														react.createElement(
-															"span",
-															{ className: "dsh-artifact__messagerole" },
-															message.role === "assistant" ? t("comments.roleAssistant") : t("comments.roleUser"),
-														),
-														react.createElement("div", null, message.text),
-													),
-												),
-												commentBusy
-													? react.createElement("div", { className: "dsh-artifact__commentstatus" }, t("comments.sending"))
-													: null,
-												activeThread.status === "open"
-													? react.createElement(
-															"div",
-															{ className: "dsh-artifact__composer" },
-															react.createElement("textarea", {
-																className: "dsh-artifact__commentinput",
-																value: commentDraft,
-																placeholder: t("comments.replyPlaceholder"),
-																onChange: (event) => setCommentDraft(event.target.value),
-																onKeyDown: (event) => {
-																	if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-																		event.preventDefault();
-																		sendReply();
-																	}
-																},
-															}),
-															react.createElement(
-																"button",
-																{
-																	type: "button",
-																	className: "dsh-artifact__primary",
-																	disabled: commentBusy || commentDraft.trim() === "",
-																	onClick: sendReply,
-																},
-																t("comments.send"),
-															),
-														)
-													: null,
-												react.createElement(
-													"div",
-													{ className: "dsh-artifact__commentactions" },
-													react.createElement(
-														"button",
-														{
-															type: "button",
-															className: "dsh-artifact__text",
-															disabled: commentBusy,
-															onClick: () => setThreadResolved(activeThread.status !== "resolved"),
-														},
-														activeThread.status === "resolved" ? t("comments.reopen") : t("comments.resolve"),
-													),
-												),
-											)
-										: selection !== null
-											? react.createElement(
-													"div",
-													{ className: "dsh-artifact__composer" },
-													react.createElement(
-														"blockquote",
-														{ className: "dsh-artifact__quote" },
-														react.createElement("span", null, t("comments.quote")),
-														selection.quote,
-													),
-													react.createElement("textarea", {
-														className: "dsh-artifact__commentinput",
-														value: commentDraft,
-														placeholder: t("comments.placeholder"),
-														onChange: (event) => setCommentDraft(event.target.value),
-														onKeyDown: (event) => {
-															if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-																event.preventDefault();
-																submitComment();
-															}
-														},
-													}),
-													react.createElement(
-														"div",
-														{ className: "dsh-artifact__commentactions" },
-														react.createElement(
-															"button",
-															{
-																type: "button",
-																className: "dsh-artifact__primary",
-																disabled: commentBusy || commentDraft.trim() === "",
-																onClick: submitComment,
-															},
-															t("comments.send"),
-														),
-														react.createElement(
-															"button",
-															{
-																type: "button",
-																className: "dsh-artifact__text",
-																onClick: () => {
-																	setSelection(null);
-																	setCommentsOpen(false);
-																},
-															},
-															t("comments.close"),
-														),
-													),
-												)
-											: comments.length === 0
-												? react.createElement("div", { className: "dsh-artifact__commentempty" }, t("comments.empty"))
-												: react.createElement(
-														"div",
-														{ className: "dsh-artifact__commentlist" },
-														comments
-															.slice()
-															.sort((a, b) =>
-																a.status === b.status
-																	? String(b.createdAt).localeCompare(String(a.createdAt))
-																	: a.status === "open"
-																		? -1
-																		: 1,
-															)
-															.map(commentRow),
-													),
 								);
 
 					const commentOverlay =
@@ -1999,30 +1990,34 @@ window.__ModuleLoader__.load({
 							: react.createElement(
 									"div",
 									{ className: "dsh-artifact__overlay" },
-									showSource ? null : unresolved.map((comment) => {
-										const rect = commentRects[comment.id];
-										if (!rect) return null;
-										const top = rect.contentTop - frameScroll;
-										const style = { top: Math.round(top) + "px", left: Math.round(rect.left) + "px" };
-										return react.createElement(
-											"button",
-											{
-												key: comment.id,
-												type: "button",
-												className: "dsh-artifact__marker",
-												style,
-												title: comment.quote,
-												onClick: () => {
-													setThreadId(comment.id);
-													setCommentDraft("");
-													setCommentsOpen(true);
-													setCommentError(null);
-												},
-											},
-											String(commentNumber.get(comment.id)),
-										);
-									}),
-									showSource || selection === null || commentsOpen
+									showSource
+										? null
+										: unresolved.map((comment) => {
+												const rect = commentRects[comment.id];
+												if (!rect) return null;
+												const open = openThreads.includes(comment.id);
+												return react.createElement(
+													"button",
+													{
+														key: "marker-" + comment.id,
+														type: "button",
+														className:
+															"dsh-artifact__marker" + (open ? " dsh-artifact__marker--open" : ""),
+														style: {
+															top: Math.round(rect.contentTop - frameScroll) + "px",
+															left: Math.round(rect.left) + "px",
+														},
+														title: comment.quote,
+														"aria-pressed": open,
+														onClick: () => {
+															setSelection(null);
+															toggleThread(comment.id);
+														},
+													},
+													String(commentNumber.get(comment.id)),
+												);
+											}),
+									showSource || selection === null
 										? null
 										: react.createElement(
 												"button",
@@ -2037,8 +2032,20 @@ window.__ModuleLoader__.load({
 												},
 												t("comments.add"),
 											),
-									commentPanel,
+									showSource ? null : newCommentCard,
+									showSource
+										? null
+										: openThreads.map((commentId) => {
+												const comment = comments.find(
+													(candidate) => candidate.id === commentId && candidate.status === "open",
+												);
+												if (comment === undefined) return null;
+												const rect = commentRects[commentId];
+												if (!rect) return null;
+												return renderThreadCard(comment, rect);
+											}),
 								);
+
 					// Both frames stay in one keyed array so a swap changes
 					// nothing but a class. Rebuilding either element would
 					// reload the document inside it and throw away the reading
@@ -2201,22 +2208,6 @@ window.__ModuleLoader__.load({
 										{ disabled: busy, onClick: restore, title: t("action.restore") },
 										null,
 										t("action.restore"),
-									),
-							open.kind === "slides"
-								? null
-								: iconButton(
-										{
-											"aria-pressed": commentsOpen,
-											onClick: toggleComments,
-											title: t("comments.title"),
-											"aria-label": t("comments.title"),
-										},
-										Icon.comment,
-										Icon.comment === null
-											? t("comments.title")
-											: unresolved.length === 0
-												? null
-												: String(unresolved.length),
 									),
 							iconButton(
 								{
