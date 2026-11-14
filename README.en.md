@@ -36,6 +36,8 @@ The agent writes the artifact with the `artifact` tool. If the conversation is o
 
 ![An HTML document opened beside the conversation after the agent writes it](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/document.png)
 
+**Downloading.** An HTML artifact can be downloaded as a standalone file for offline reading or sharing; decks keep their `.pptx` export in the editor.
+
 **Finding artifacts.** A conversation's **Artifacts** tab lists what that session wrote; the **Artifacts** panel in the left sidebar lists every artifact from every session. **Open in sidebar** moves a document from the panel to the conversation's side.
 
 ![The artifact library, newest first](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-en.png)

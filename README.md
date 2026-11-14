@@ -36,6 +36,8 @@ dsh plugin --profile desktop add dsh-artifact  # 桌面版
 
 ![HTML 文档写完后在对话右侧打开](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/document.png)
 
+**下载。** HTML 工件可以下载为独立文件，方便离线打开或发给别人；幻灯片仍使用编辑器的 `.pptx` 导出。
+
 **查找工件。** 对话的「工件」标签页列出该会话写过的工件；左侧栏的「工件」面板列出所有会话的工件。工件面板中的文档可通过「在侧边栏打开」放到对话旁阅读。
 
 ![工件库：所有工件按时间倒序排列](https://raw.githubusercontent.com/Jannchie/dsh-artifact/main/images/library-cn.png)
